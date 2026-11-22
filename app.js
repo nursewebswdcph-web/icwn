@@ -191,6 +191,7 @@ function initAdminView(){
     ["adminHospitalPage","adminThipPage","adminUnitsPage"].forEach((id,i)=>$(id).classList.toggle("hidden",id!==["adminHospitalPage","adminThipPage","adminUnitsPage"][["hospital","thip","units"].indexOf(b.dataset.adminPage)]));
     if(b.dataset.adminPage==="units")renderAdminUnits();
     if(b.dataset.adminPage==="thip")loadAdminThip();
+    if(b.dataset.adminPage==="hospital")loadAdminReports();
   });
   $("saveSterilization").onclick=saveSterilization;
   // Admin landing page: show the unit selection grid first after login.
