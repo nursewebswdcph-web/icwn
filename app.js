@@ -65,7 +65,7 @@ async function loginCredential(resp){
       $("appView").classList.remove("hidden");
       $("adminView").classList.add("hidden");
     }
-    $("signOutBtn").classList.remove("hidden");
+    $("signOutBtn").classList.remove("hidden");document.body.classList.add("authed");document.querySelectorAll("[data-admin-only]").forEach(e=>e.classList.toggle("hidden",user.role!=="Admin"));setNav(user.role==="Admin"?"hospital":"units");
     hideLoginLoading();
   }catch(e){
     idToken="";
@@ -76,13 +76,13 @@ async function loginCredential(resp){
   }
 }
 function initGoogle(){if(!window.google?.accounts?.id){setTimeout(initGoogle,300);return;}if(CONFIG.GOOGLE_CLIENT_ID.startsWith("YOUR_")){$("loginMessage").textContent="กรุณากำหนด GOOGLE_CLIENT_ID ใน app.js ก่อนเปิดใช้";return;}google.accounts.id.initialize({client_id:CONFIG.GOOGLE_CLIENT_ID,callback:loginCredential});google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",shape:"pill",text:"signin_with",locale:"th"});}
-function fieldMarkup(key,label){const textType=/_detail|_location|_symptoms|_organism|_factors/.test(key);return `<div class="field"><label for="${key}">${label}</label>${textType?`<textarea id="${key}" data-key="${key}" placeholder="ระบุข้อมูล (ถ้ามี)"></textarea>`:`<input id="${key}" data-key="${key}" type="number" min="0" step="any" inputmode="decimal" placeholder="0">`}</div>`;}
-function renderSections(){const sections=isLabour(currentUnit)?[...LABOUR,...PERSONNEL]:[...STANDARD,...PERSONNEL];$("formSections").innerHTML=sections.map((s,i)=>`<details class="section" open><summary>${String(i+1).padStart(2,"0")} · ${s.title}</summary><div class="section-body"><div class="field-grid">${s.fields.map(f=>fieldMarkup(f[0],f[1])).join("")}</div>${s.title.startsWith("อุบัติเหตุ")||s.title.startsWith("การเจ็บป่วย")?"":""}</div></details>`).join("")+`<div class="calc-row"><div class="metric"><small>รวมอุบัติเหตุ (ครั้ง)</small><strong id="injTotal">0</strong></div><div class="metric"><small>% อุบัติเหตุ</small><strong id="injRate">—</strong></div><div class="metric"><small>รวมเจ็บป่วย (ครั้ง)</small><strong id="illTotal">0</strong></div><div class="metric"><small>% ป่วย</small><strong id="illRate">—</strong></div></div>`;
+function fieldMarkup(key,label){const textType=/_detail|_location|_symptoms|_organism|_factors/.test(key);const m=label.match(/^(.*?)\s*\(([^()]*)\)\s*$/),name=m?m[1]:label,suf=m?m[2]:"";return `<div class="field"><label for="${key}">${name}</label>${textType?`<textarea id="${key}" data-key="${key}" placeholder="ระบุข้อมูล (ถ้ามี)"></textarea>`:`<div class="inp"><input id="${key}" data-key="${key}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span>${suf}</span></div>`}</div>`;}
+function renderSections(){const sections=isLabour(currentUnit)?[...LABOUR,...PERSONNEL]:[...STANDARD,...PERSONNEL];$("formSections").innerHTML=sections.map((s,i)=>`<details class="section" open><summary>${s.title}</summary><div class="section-body"><div class="field-grid">${s.fields.map(f=>fieldMarkup(f[0],f[1])).join("")}</div>${s.title.startsWith("อุบัติเหตุ")||s.title.startsWith("การเจ็บป่วย")?"":""}</div></details>`).join("")+`<div class="calc-row"><div class="metric"><small>รวมอุบัติเหตุ (ครั้ง)</small><strong id="injTotal">0</strong></div><div class="metric"><small>% อุบัติเหตุ</small><strong id="injRate">—</strong></div><div class="metric"><small>รวมเจ็บป่วย (ครั้ง)</small><strong id="illTotal">0</strong></div><div class="metric"><small>% ป่วย</small><strong id="illRate">—</strong></div></div>`;
 document.querySelectorAll("[data-key]").forEach(el=>{el.value=currentData[el.dataset.key]??"";el.addEventListener("input",()=>{currentData[el.dataset.key]=el.value;updateMetrics();});});updateMetrics();}
 function updateMetrics(){const injury=["inj_needle","inj_blade","inj_tube_glass","inj_other_sharp","inj_eye","inj_mouth"].reduce((s,k)=>s+num(currentData[k]),0);const illness=["ill_respiratory","ill_gastro","ill_conjunctivitis","ill_chickenpox","ill_mumps","ill_herpes","ill_tb","ill_other"].reduce((s,k)=>s+num(currentData[k]),0);const staff=num(currentData.staff_total);$("injTotal").textContent=injury;$("illTotal").textContent=illness;$("injRate").textContent=staff?(injury*100/staff).toFixed(2)+"%":"—";$("illRate").textContent=staff?(illness*100/staff).toFixed(2)+"%":"—";}
 async function openUnit(unit){currentUnit=unit;$("saveBtn").disabled=user?.role==="Viewer";$("submitBtn").disabled=user?.role==="Viewer";currentData=emptyData();currentRecord=null;$("unitsPage").classList.add("hidden");$("unitHomePage").classList.add("hidden");$("summaryPage").classList.add("hidden");$("historyPage").classList.add("hidden");$("formPage").classList.remove("hidden");$("unitTitle").textContent=unit;$("pageTitle").textContent=unit;renderSections();try{const rec=await api("getRecord",{unit,month:$("month").value});if(rec){currentRecord=rec;currentData={...currentData,...rec.payload};document.querySelectorAll("[data-key]").forEach(el=>el.value=currentData[el.dataset.key]??"");updateMetrics();$("recordStatus").textContent=rec.status==="SUBMITTED"?"ส่งแล้ว":"ฉบับร่าง";$("recordStatus").className="status "+(rec.status==="SUBMITTED"?"submitted":"draft");}}catch(e){setMsg(e.message);}}
-function renderUnits(){
-  $("unitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-unit="${u}"><strong><i class="unit-dot"></i>${u}</strong><small>เปิดระบบหน่วยงาน →</small></button>`).join("");
+function renderUnits(){setTimeout(paintStrips,0);
+  $("unitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-unit="${u}"><strong>${u}</strong><span class="strip">${"<i></i>".repeat(12)}</span><span class="cap">กำลังโหลดสถานะ…</span></button>`).join("");
   document.querySelectorAll("#unitGrid [data-unit]").forEach(b=>b.onclick=()=>selectUnit(b.dataset.unit));
 }
 async function selectUnit(unit){
@@ -94,7 +94,7 @@ async function loadUnitHistory(){
   try{
     const rows=await api("listRecords",{});
     const list=(rows||[]).filter(r=>r.unit===currentUnit).sort((x,y)=>y.month.localeCompare(x.month));
-    $("unitHistoryContent").innerHTML=list.length?`<table><thead><tr><th>เดือน</th><th>สถานะ</th><th>แก้ไขล่าสุด</th><th></th></tr></thead><tbody>${list.map(r=>`<tr><td>${r.month}</td><td>${r.status==="SUBMITTED"?"ส่งแล้ว":"ฉบับร่าง"}</td><td>${r.updated_at?new Date(r.updated_at).toLocaleString("th-TH"):"—"}</td><td><button class="back" data-open-month="${r.month}">เปิดรายการ</button></td></tr>`).join("")}</tbody></table>`:"<p class='muted'>ยังไม่มีประวัติการบันทึกของหน่วยงานนี้</p>";
+    $("unitHistoryContent").innerHTML=list.length?`<ul class="hist">${list.map(r=>`<li><button data-open-month="${r.month}"><span><b>${monthTH(r.month)}</b><small>${r.updated_at?"แก้ไขล่าสุด "+new Date(r.updated_at).toLocaleString("th-TH"):"—"}</small></span><em class="status ${r.status==="SUBMITTED"?"submitted":""}">${r.status==="SUBMITTED"?"ส่งแล้ว":"ฉบับร่าง"}</em></button></li>`).join("")}</ul>`:"<p class='muted'>ยังไม่มีประวัติการบันทึก กด “เพิ่มรายการ” เพื่อเริ่มบันทึกเดือนนี้</p>";
     document.querySelectorAll("[data-open-month]").forEach(b=>b.onclick=()=>{ $("month").value=b.dataset.openMonth;openUnit(currentUnit);});
   }catch(e){$("unitHistoryContent").textContent=e.message;}
 }
@@ -133,7 +133,7 @@ async function loadUnitReport(){
     const tables=labour?[
       ["การเฝ้าระวังในผู้คลอด",[["month","เดือน"],["total_deliveries","จำนวนผู้คลอดทั้งหมด"],["deliveries","คลอดทางช่องคลอด"],["episiotomy","Episiotomy"],["no_tear","No tear"],["slight_tear","Slight tear"],["cs_deliveries","ผ่าตัดคลอด C/S"],["live_births","ทารกเกิดมีชีพ"]]]
     ]:[
-      ["ตารางที่ 1 การติดเชื้อที่สัมพันธ์กับการใช้อุปกรณ์การแพทย์",[["month","เดือน"],["ventilator_days","วัน On Ventilator"],["vap_cases","VAP (ครั้ง)"],["vap_rate","อัตรา VAP"],["foley_days","วัน On Foley's cath"],["cauti_cases","CAUTI (ครั้ง)"],["cauti_rate","อัตรา CAUTI"],["iv_days","วัน On IV"],["heparin_days","วัน On Heparin lock"],["iv_days","วัน On IV"],["heparin_days","วัน On Heparin lock"],["iv_lock_days","รวมวัน On IV & Lock"],["phlebitis_cases","Phlebitis ≥3"],["phlebitis_rate","อัตรา Phlebitis"],["cline_days","วัน On C-Line"],["cutdown_days","วัน On Cut down / DLC"],["umbilical_days","วัน On Umbilical cath"],["clabsi_days","รวมวัน On Device"],["clabsi_cases","CLABSI"],["clabsi_rate","อัตรา CLABSI"]]],
+      ["ตารางที่ 1 การติดเชื้อที่สัมพันธ์กับการใช้อุปกรณ์การแพทย์",[["month","เดือน"],["ventilator_days","วัน On Ventilator"],["vap_cases","VAP (ครั้ง)"],["vap_rate","อัตรา VAP"],["foley_days","วัน On Foley's cath"],["cauti_cases","CAUTI (ครั้ง)"],["cauti_rate","อัตรา CAUTI"],["iv_days","วัน On IV"],["heparin_days","วัน On Heparin lock"],["iv_lock_days","รวมวัน On IV & Lock"],["phlebitis_cases","Phlebitis ≥3"],["phlebitis_rate","อัตรา Phlebitis"],["cline_days","วัน On C-Line"],["cutdown_days","วัน On Cut down / DLC"],["umbilical_days","วัน On Umbilical cath"],["clabsi_days","รวมวัน On Device"],["clabsi_cases","CLABSI"],["clabsi_rate","อัตรา CLABSI"]]],
       ["ตารางที่ 2 การเฝ้าระวัง SSI",[["month","เดือน"],["clean_wound","Clean wound"],["clean_cont_wound","Clean-contaminated"],["contaminated_wound","Contaminated"],["dirty_wound","Dirty wound"],["ssi_cases","SSI เฉพาะแผลประเภท 1"],["ssi_rate","ร้อยละ SSI"]]],
       ["ตารางที่ 3 การเฝ้าระวังในทารกอายุ < 30 วัน",[["month","เดือน"],["live_births","ทารกเกิดมีชีพ"],["eye_infection","ติดเชื้อที่ตา (ครั้ง)"],["eye_rate","ติดเชื้อที่ตา (%)"],["navel_infection","ติดเชื้อที่สะดือ (ครั้ง)"],["navel_rate","ติดเชื้อที่สะดือ (%)"]]],
       ["ตารางที่ 4 การเฝ้าระวังในผู้คลอด",[["month","เดือน"],["deliveries","ผู้คลอดทั้งหมด"],["episiotomy","แผล Episiotomy"],["episiotomy_ni","ติดเชื้อ Episiotomy"],["episiotomy_rate","ร้อยละ"],["cs_deliveries","แผล C/S"],["cs_ni","ติดเชื้อ C/S"],["cs_rate","ร้อยละ"]]],
@@ -177,8 +177,8 @@ function initAdminView(){
   $("saveSterilization").onclick=saveSterilization;
   loadAdminReports();loadAdminThip();
 }
-function renderAdminUnits(){
-  $("adminUnitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-admin-unit="${u}"><strong><i class="unit-dot"></i>${u}</strong><small>เข้าบันทึกข้อมูล →</small></button>`).join("");
+function renderAdminUnits(){setTimeout(paintStrips,0);
+  $("adminUnitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-admin-unit="${u}"><strong>${u}</strong><span class="strip">${"<i></i>".repeat(12)}</span><span class="cap">กำลังโหลดสถานะ…</span></button>`).join("");
   document.querySelectorAll("[data-admin-unit]").forEach(b=>b.onclick=()=>{currentUnit=b.dataset.adminUnit;$("adminView").classList.add("hidden");$("appView").classList.remove("hidden");$("backAdminDashboard").classList.remove("hidden");$("changeUnit").classList.add("hidden");$("addMonthlyRecord").classList.remove("hidden");hidePages();$("unitHomePage").classList.remove("hidden");$("unitHomeTitle").textContent=currentUnit;$("pageTitle").textContent=currentUnit;loadUnitHistory();});
 }
 function metricCards(container,items){
@@ -238,3 +238,28 @@ async function saveSterilization(){
 }
 
 initGoogle();
+/* ---- UI v2 helpers: navigation, month names, month strips ---- */
+const TH_M=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+function monthTH(m){const [y,mo]=String(m).split("-").map(Number);return mo?TH_M[mo-1]+" "+(y+543):m;}
+function fyMonths(fy){const y=fy-544,p=n=>String(n).padStart(2,"0");return [10,11,12].map(m=>y+"-"+m).concat([1,2,3,4,5,6,7,8,9].map(m=>(y+1)+"-"+p(m)));}
+async function paintStrips(){
+  try{
+    const rows=await api("listRecords",{}),d=new Date(),fy=d.getMonth()>=9?d.getFullYear()+544:d.getFullYear()+543,ms=fyMonths(fy),now=localMonth();
+    document.querySelectorAll(".unit-card").forEach(c=>{
+      const u=c.dataset.unit||c.dataset.adminUnit,by={};let done=0;
+      (rows||[]).filter(r=>r.unit===u).forEach(r=>by[r.month]=r.status);
+      c.querySelector(".strip").innerHTML=ms.map(m=>{const st=by[m];if(st==="SUBMITTED")done++;return `<i class="${st==="SUBMITTED"?"ok":st?"dr":m>now?"fu":"mi"}" title="${monthTH(m)}"></i>`;}).join("");
+      c.querySelector(".cap").textContent=`ส่งแล้ว ${done}/12 เดือน`;
+    });
+  }catch(e){document.querySelectorAll(".unit-card .cap").forEach(x=>x.textContent="");}
+}
+function setNav(k){document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav===k));}
+function navTo(k){
+  if(k==="account"){if(confirm("ออกจากระบบ "+(user?.email||"")+" ?"))$("signOutBtn").click();return;}
+  if(user?.role==="Admin"){
+    if(!$("appView").classList.contains("hidden"))$("backAdminDashboard").click();
+    document.querySelector(`[data-admin-page="${k}"]`)?.click();
+  }else{$("changeUnit").click();}
+  setNav(k);window.scrollTo(0,0);
+}
+document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>navTo(b.dataset.nav));

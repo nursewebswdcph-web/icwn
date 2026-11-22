@@ -1,51 +1,74 @@
 <!doctype html>
 <html lang="th">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#123b56"><title>IC Indicator | รพร.สว่างแดนดิน</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2d4fd3">
+<title>IC Indicator | รพร.สว่างแดนดิน</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./styles.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div id="loginLoading" class="loading-overlay hidden" role="status" aria-live="polite" aria-hidden="true">
-  <div class="loading-dialog">
-    <div class="loading-spinner" aria-hidden="true"></div>
-    <h2 id="loginLoadingTitle">กำลังเข้าสู่ระบบ</h2>
-    <p id="loginLoadingDetail">กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์และโหลดข้อมูล</p>
-    <span class="loading-note">IC Indicator · โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</span>
-  </div>
+  <div class="loading-dialog"><div class="loading-spinner" aria-hidden="true"></div><h2 id="loginLoadingTitle">กำลังเข้าสู่ระบบ</h2><p id="loginLoadingDetail">กำลังตรวจสอบสิทธิ์และโหลดข้อมูล</p></div>
 </div>
-<header class="topbar"><div class="brandmark">IC</div><div><strong>IC Indicator</strong><small>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</small></div><div class="top-actions"><span id="userEmail"></span><button id="signOutBtn" class="ghost hidden">ออกจากระบบ</button></div></header>
+
+<aside class="rail" aria-label="เมนูหลัก">
+  <div class="brand"><span class="logo">IC</span><div><strong>IC Indicator</strong><small>รพร.สว่างแดนดิน</small></div></div>
+  <nav class="nav">
+    <button class="nav-item" data-nav="units"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg><span>หน่วยงาน</span></button>
+    <button class="nav-item hidden" data-nav="hospital" data-admin-only><svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg><span>ภาพรวม รพ.</span></button>
+    <button class="nav-item hidden" data-nav="thip" data-admin-only><svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><span>THIP II</span></button>
+  </nav>
+  <div class="rail-foot"><span id="userEmail"></span><button id="signOutBtn" class="text-btn hidden">ออกจากระบบ</button></div>
+</aside>
+
+<header class="mobilebar"><span class="logo">IC</span><strong>IC Indicator</strong></header>
+
 <main>
 <section id="loginView" class="login-wrap">
-  <div class="login-card"><div class="hero-icon">✚</div><p class="eyebrow">INFECTION CONTROL</p><h1>ระบบบันทึกตัวชี้วัด IC</h1><p class="muted">บันทึกข้อมูลสรุปรายเดือนของหน่วยงาน</p>
-  <div id="googleButton"></div><p id="loginMessage" class="hint">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต</p></div>
+  <div class="login-card">
+    <div class="months" aria-hidden="true"><i class="ok"></i><i class="ok"></i><i class="ok"></i><i class="dr"></i><i class="mi"></i><i class="mi"></i><i class="fu"></i><i class="fu"></i><i class="fu"></i><i class="fu"></i><i class="fu"></i><i class="fu"></i></div>
+    <h1>บันทึกตัวชี้วัด IC</h1>
+    <p class="muted">สรุปรายเดือนของแต่ละหน่วยงาน โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</p>
+    <div id="googleButton"></div>
+    <p id="loginMessage" class="hint">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต</p>
+  </div>
 </section>
 
 <section id="adminView" class="hidden">
-  <div class="welcome"><div><p class="eyebrow">HOSPITAL DASHBOARD</p><h1>ภาพรวมทั้งโรงพยาบาล</h1><p class="muted">รายงานตัวชี้วัด IC และ THIP II</p></div>
-  <div class="period"><label for="adminFiscalYear">ปีงบประมาณ</label><select id="adminFiscalYear"></select><label for="adminMonth">เลือกเดือน (ไม่เลือก = ทั้งปี)</label><input type="month" id="adminMonth"></div></div>
+  <div class="page-head"><div><h1>ภาพรวมโรงพยาบาล</h1><p class="muted">ตัวชี้วัด IC และ THIP II</p></div>
+  <div class="period"><label for="adminFiscalYear">ปีงบประมาณ</label><select id="adminFiscalYear"></select><label for="adminMonth">เดือน (ว่าง = ทั้งปี)</label><input type="month" id="adminMonth"></div></div>
   <nav class="tabs" aria-label="เมนูผู้ดูแล"><button class="tab active" data-admin-page="hospital">รายงาน IC</button><button class="tab" data-admin-page="thip">รายงาน THIP II</button><button class="tab" data-admin-page="units">เข้าบันทึกข้อมูลรายหน่วยงาน</button></nav>
   <section id="adminHospitalPage"><div id="adminHospitalCards" class="metric-grid"></div><div class="panel"><h2>รายงานตัวชี้วัด IC รายเดือน</h2><div id="adminHospitalTable" class="table-scroll"></div></div></section>
-  <section id="adminThipPage" class="hidden"><div id="adminThipCards" class="metric-grid"></div><div class="panel"><h2>บันทึกข้อมูลประสิทธิภาพการทำปราศจากเชื้อ</h2><div class="admin-inputs"><div class="field"><label for="sterilizationMonth">เดือนที่บันทึกข้อมูล</label><input id="sterilizationMonth" type="month"></div><div class="field"><label for="sterilizationPassed">จำนวนครั้งที่ตรวจสอบผ่านเกณฑ์</label><input id="sterilizationPassed" type="number" min="0" step="1"></div><div class="field"><label for="sterilizationTotal">จำนวนครั้งที่ตรวจสอบทั้งหมด</label><input id="sterilizationTotal" type="number" min="0" step="1"></div><button id="saveSterilization" class="primary">บันทึกข้อมูลประจำเดือน</button><span id="sterilizationMessage" class="muted"></span></div></div><div class="panel"><h2>รายงาน THIP II รายเดือน</h2><div id="adminThipTable" class="table-scroll"></div></div></section>
-  <section id="adminUnitsPage" class="hidden"><div class="form-heading"><div><h2>เลือกหน่วยงานเพื่อเข้าบันทึก</h2><p class="muted">ใช้แบบฟอร์มและขั้นตอนเดียวกับผู้ใช้หน่วยงาน</p></div></div><div id="adminUnitGrid" class="unit-grid"></div></section>
+  <section id="adminThipPage" class="hidden"><div id="adminThipCards" class="metric-grid"></div>
+    <div class="panel"><h2>ผลตรวจประสิทธิภาพการทำปราศจากเชื้อ</h2><div class="admin-inputs"><div class="field"><label for="sterilizationMonth">เดือน</label><input id="sterilizationMonth" type="month"></div><div class="field"><label for="sterilizationPassed">ตรวจผ่านเกณฑ์ (ครั้ง)</label><input id="sterilizationPassed" type="number" min="0" step="1" inputmode="numeric"></div><div class="field"><label for="sterilizationTotal">ตรวจทั้งหมด (ครั้ง)</label><input id="sterilizationTotal" type="number" min="0" step="1" inputmode="numeric"></div><button id="saveSterilization" class="primary">บันทึก</button><span id="sterilizationMessage" class="muted"></span></div></div>
+    <div class="panel"><h2>รายงาน THIP II รายเดือน</h2><div id="adminThipTable" class="table-scroll"></div></div></section>
+  <section id="adminUnitsPage" class="hidden"><div class="section-title"><h2>เลือกหน่วยงานเพื่อบันทึกข้อมูล</h2><p class="muted">แถบ 12 ช่อง = ต.ค. ถึง ก.ย. ของปีงบประมาณปัจจุบัน</p></div><div id="adminUnitGrid" class="unit-grid"></div></section>
 </section>
+
 <section id="appView" class="hidden">
-  <div class="welcome"><div><p class="eyebrow">MONTHLY REPORTING</p><h1 id="pageTitle">เลือกหน่วยงาน</h1><p class="muted" id="welcomeText">เลือกหน่วยงานเพื่อบันทึกข้อมูลสรุปรายเดือน</p></div><div class="period"><label for="month">เดือนที่บันทึก</label><input type="month" id="month"></div></div>
-  <nav class="tabs" aria-label="เมนูหน่วยงาน"><button class="tab active" data-page="home">ประวัติการบันทึกรายเดือน</button><button class="tab" data-page="summary">สรุปรายงานหน่วยงาน</button></nav>
+  <div class="page-head"><div><h1 id="pageTitle">หน่วยงาน</h1><p class="muted" id="welcomeText">เลือกหน่วยงานเพื่อบันทึกข้อมูลสรุปรายเดือน</p></div><div class="period"><label for="month">เดือนที่บันทึก</label><input type="month" id="month"></div></div>
+  <nav class="tabs" aria-label="เมนูหน่วยงาน"><button class="tab active" data-page="home">ประวัติการบันทึก</button><button class="tab" data-page="summary">สรุปรายงาน</button></nav>
   <section id="unitsPage"><div id="unitGrid" class="unit-grid"></div></section>
-  <section id="unitHomePage" class="hidden"><div class="form-heading"><div><h2 id="unitHomeTitle"></h2><p class="muted">ประวัติการบันทึกข้อมูลรายเดือนของหน่วยงาน</p></div><div class="row-actions"><button id="changeUnit" class="back hidden">เปลี่ยนหน่วยงาน</button><button id="backAdminDashboard" class="back hidden">← ภาพรวมผู้ดูแล</button><button id="addMonthlyRecord" class="primary">＋ เพิ่มรายการ</button></div></div><div class="panel"><div id="unitHistoryContent" class="table-scroll"></div></div></section>
+  <section id="unitHomePage" class="hidden"><div class="section-title row"><div><h2 id="unitHomeTitle"></h2><p class="muted">ประวัติการบันทึกรายเดือน</p></div><div class="row-actions"><button id="changeUnit" class="back hidden">เปลี่ยนหน่วยงาน</button><button id="backAdminDashboard" class="back hidden">← ภาพรวม</button></div></div><div id="unitHistoryContent"></div><button id="addMonthlyRecord" class="fab"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>เพิ่มรายการ</button></section>
   <section id="formPage" class="hidden">
-    <div class="form-heading"><button id="backUnits" class="back">← ประวัติรายเดือน</button><div><h2 id="unitTitle"></h2><p class="muted">กรอกยอดรวมของเดือนที่เลือก ไม่ต้องบันทึกรายบุคคล</p></div><span id="recordStatus" class="status draft">ฉบับร่าง</span></div>
+    <div class="section-title row"><button id="backUnits" class="back">← ประวัติ</button><div class="grow"><h2 id="unitTitle"></h2><p class="muted">กรอกยอดรวมของเดือนที่เลือก</p></div><span id="recordStatus" class="status draft">ฉบับร่าง</span></div>
     <div id="formSections" class="form-sections"></div>
-    <div class="form-footer"><span id="saveMessage" class="muted">ข้อมูลจะบันทึกแยกตามหน่วยงานและเดือน</span><div><button id="saveBtn" class="primary">บันทึกฉบับร่าง</button><button id="submitBtn" class="secondary">ส่งรายงาน</button></div></div>
+    <div class="form-footer"><span id="saveMessage" class="muted">ข้อมูลบันทึกแยกตามหน่วยงานและเดือน</span><div><button id="saveBtn" class="secondary">บันทึกฉบับร่าง</button><button id="submitBtn" class="primary">ส่งรายงาน</button></div></div>
   </section>
-  <section id="summaryPage" class="hidden"><div class="report-period"><label for="unitFiscalYear">ปีงบประมาณ</label><select id="unitFiscalYear"></select><label for="unitReportMonth">เลือกเดือน (ไม่เลือก = ทั้งปี)</label><input id="unitReportMonth" type="month"></div><div id="unitReportCards" class="metric-grid"></div><div id="summaryContent" class="report-tables"></div></section>
+  <section id="summaryPage" class="hidden"><div class="report-period"><label for="unitFiscalYear">ปีงบประมาณ</label><select id="unitFiscalYear"></select><label for="unitReportMonth">เดือน (ว่าง = ทั้งปี)</label><input id="unitReportMonth" type="month"></div><div id="unitReportCards" class="metric-grid"></div><div id="summaryContent" class="report-tables"></div></section>
   <section id="historyPage" class="hidden"><div class="panel"><h2>ประวัติการบันทึก</h2><div id="historyContent"></div></div></section>
 </section>
 </main>
-<footer>IC Indicator · ข้อมูลสรุปรายเดือน · โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</footer>
+
+<nav class="bottomnav" aria-label="เมนูหลัก">
+  <button class="nav-item" data-nav="units"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg><span>หน่วยงาน</span></button>
+  <button class="nav-item hidden" data-nav="hospital" data-admin-only><svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg><span>ภาพรวม</span></button>
+  <button class="nav-item hidden" data-nav="thip" data-admin-only><svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><span>THIP II</span></button>
+  <button class="nav-item" data-nav="account"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><span>บัญชี</span></button>
+</nav>
 <script src="./app.js"></script>
 </body></html>
