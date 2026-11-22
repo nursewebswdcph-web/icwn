@@ -14,7 +14,7 @@ const PERSONNEL=[
 {title:"อุบัติเหตุจากการปฏิบัติงาน (จำนวนครั้ง)",fields:[["inj_needle","เข็มทิ่มตำ (ครั้ง)"],["inj_blade","ใบมีดบาด (ครั้ง)"],["inj_tube_glass","หลอดยา / tube Hct / แก้วบาด (ครั้ง)"],["inj_other_sharp","ของมีคมอื่น ๆ (ครั้ง)"],["inj_eye","สารคัดหลั่งเข้าตา (ครั้ง)"],["inj_mouth","สารคัดหลั่งเข้าปาก (ครั้ง)"]]},
 {title:"การเจ็บป่วยด้วยโรคติดเชื้อ (จำนวนครั้ง)",fields:[["ill_respiratory","ระบบทางเดินหายใจ (ครั้ง)"],["ill_gastro","ระบบทางเดินอาหาร (ครั้ง)"],["ill_conjunctivitis","ตาแดง (ครั้ง)"],["ill_chickenpox","อีสุกอีใส (ครั้ง)"],["ill_mumps","คางทูม (ครั้ง)"],["ill_herpes","เริม (ครั้ง)"],["ill_tb","TB ปอด (ครั้ง)"],["ill_other","อื่น ๆ (ครั้ง)"],["ill_other_detail","ระบุโรคอื่น ๆ"]]}
 ];
-const LABOUR=[{title:"การเฝ้าระวังในผู้คลอด",fields:[["total_deliveries","จำนวนผู้คลอดทั้งหมด (ราย)"],["deliveries","คลอดทางช่องคลอด (ราย)"],["episiotomy","Episiotomy (ราย)"],["no_tear","No tear (ราย)"],["slight_tear","Slight tear (ราย)"],["cs_deliveries","ผ่าตัดคลอดทางหน้าท้อง (ราย)"],["live_births","ทารกเกิดมีชีพทั้งหมด (ราย)"]]}];
+const LABOUR=[{title:"การเฝ้าระวังในผู้คลอด",fields:[["total_deliveries","จำนวนผู้คลอดทั้งหมด (ราย)"],["deliveries","คลอดทางช่องคลอด (ราย)"],["episiotomy","Episiotomy (ราย)"],["no_tear","No tear (ราย)"],["slight_tear","Slight tear (ราย)"],["cs_deliveries","ผ่าตัดคลอดทางหน้าท้อง (ราย)"],["live_births","ทารกเกิดมีชีพทั้งหมด (ราย)"],["episiotomy_ni","ติดเชื้อแผล Episiotomy (ครั้ง)"],["cs_ni","ติดเชื้อแผล C/S (ครั้ง)"]]}];
 let idToken="",user=null,currentUnit="",currentData={},currentRecord=null,units=UNITS;
 const $=id=>document.getElementById(id);
 const isLabour=u=>u==="ห้องคลอด";
@@ -131,7 +131,7 @@ async function loadUnitReport(){
     const tables=labour?[
       ["การเฝ้าระวังในผู้คลอด",[["month","เดือน"],["total_deliveries","จำนวนผู้คลอดทั้งหมด"],["deliveries","คลอดทางช่องคลอด"],["episiotomy","Episiotomy"],["no_tear","No tear"],["slight_tear","Slight tear"],["cs_deliveries","ผ่าตัดคลอด C/S"],["live_births","ทารกเกิดมีชีพ"]]]
     ]:[
-      ["ตารางที่ 1 การติดเชื้อที่สัมพันธ์กับการใช้อุปกรณ์การแพทย์",[["month","เดือน"],["ventilator_days","วัน On Ventilator"],["vap_cases","VAP (ครั้ง)"],["vap_rate","อัตรา VAP"],["foley_days","วัน On Foley's cath"],["cauti_cases","CAUTI (ครั้ง)"],["cauti_rate","อัตรา CAUTI"],["iv_days","วัน On IV"],["heparin_days","วัน On Heparin lock"],["iv_lock_days","รวมวัน On IV & Lock"],["phlebitis_cases","Phlebitis ≥3"],["phlebitis_rate","อัตรา Phlebitis"],["cline_days","วัน On C-Line"],["cutdown_days","วัน On Cut down / DLC"],["umbilical_days","วัน On Umbilical cath"],["clabsi_days","รวมวัน On Device"],["clabsi_cases","CLABSI"],["clabsi_rate","อัตรา CLABSI"]]],
+      ["ตารางที่ 1 การติดเชื้อที่สัมพันธ์กับการใช้อุปกรณ์การแพทย์",[["month","เดือน"],["ventilator_days","วัน On Ventilator"],["vap_cases","VAP (ครั้ง)"],["vap_rate","อัตรา VAP"],["foley_days","วัน On Foley's cath"],["cauti_cases","CAUTI (ครั้ง)"],["cauti_rate","อัตรา CAUTI"],["iv_days","วัน On IV"],["heparin_days","วัน On Heparin lock"],["iv_days","วัน On IV"],["heparin_days","วัน On Heparin lock"],["iv_lock_days","รวมวัน On IV & Lock"],["phlebitis_cases","Phlebitis ≥3"],["phlebitis_rate","อัตรา Phlebitis"],["cline_days","วัน On C-Line"],["cutdown_days","วัน On Cut down / DLC"],["umbilical_days","วัน On Umbilical cath"],["clabsi_days","รวมวัน On Device"],["clabsi_cases","CLABSI"],["clabsi_rate","อัตรา CLABSI"]]],
       ["ตารางที่ 2 การเฝ้าระวัง SSI",[["month","เดือน"],["clean_wound","Clean wound"],["clean_cont_wound","Clean-contaminated"],["contaminated_wound","Contaminated"],["dirty_wound","Dirty wound"],["ssi_cases","SSI เฉพาะแผลประเภท 1"],["ssi_rate","ร้อยละ SSI"]]],
       ["ตารางที่ 3 การเฝ้าระวังในทารกอายุ < 30 วัน",[["month","เดือน"],["live_births","ทารกเกิดมีชีพ"],["eye_infection","ติดเชื้อที่ตา (ครั้ง)"],["eye_rate","ติดเชื้อที่ตา (%)"],["navel_infection","ติดเชื้อที่สะดือ (ครั้ง)"],["navel_rate","ติดเชื้อที่สะดือ (%)"]]],
       ["ตารางที่ 4 การเฝ้าระวังในผู้คลอด",[["month","เดือน"],["deliveries","ผู้คลอดทั้งหมด"],["episiotomy","แผล Episiotomy"],["episiotomy_ni","ติดเชื้อ Episiotomy"],["episiotomy_rate","ร้อยละ"],["cs_deliveries","แผล C/S"],["cs_ni","ติดเชื้อ C/S"],["cs_rate","ร้อยละ"]]],
@@ -190,7 +190,7 @@ async function loadAdminReports(){
     metricCards("adminHospitalCards",[
       ["ผู้ป่วยทั้งหมด",fmt(tot.patient_total,0)],["VAP",fmt(rate(tot.vap_cases,tot.vap_days))],["CAUTI",fmt(rate(tot.cauti_cases,tot.foley_days))],
       ["P. Phlebitis",fmt(rate(tot.phlebitis_cases,tot.iv_lock_days))],["CLABSI",fmt(rate(tot.clabsi_cases,tot.clabsi_days))],
-      ["SSI (%)",fmt(rate(tot.ssi_cases,tot.ssi_clean,100))],["ติดเชื้อที่ตา (ครั้ง)",fmt(tot.eye_infection,0)],["ติดเชื้อที่สะดือ (ครั้ง)",fmt(tot.navel_infection,0)],
+      ["SSI (%)",fmt(rate(tot.ssi_cases,tot.clean_wound,100))],["ติดเชื้อที่ตา (ครั้ง)",fmt(tot.eye_infection,0)],["ติดเชื้อที่สะดือ (ครั้ง)",fmt(tot.navel_infection,0)],
       ["ติดเชื้อ Episiotomy",fmt(tot.episiotomy_ni,0)],["ติดเชื้อแผล C/S",fmt(tot.cs_ni,0)],["วันนอนผู้ป่วยจำหน่าย",fmt(tot.patient_days,0)],
       ["ติดเชื้อตำแหน่งอื่น",fmt(tot.other_infection,0)],["ติดเชื้อใน รพ.",fmt(tot.hospital_ni,0)],["อุบัติเหตุบุคลากร (%)",fmt(rate(tot.injury,tot.staff_total,100))],["เจ็บป่วยบุคลากร (%)",fmt(rate(tot.illness,tot.staff_total,100))]
     ]);
