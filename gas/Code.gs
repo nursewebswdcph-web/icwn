@@ -77,6 +77,8 @@ function ensureSheets_(){
  * Safe to run repeatedly; existing records and audit history are preserved.
  */
 function syncUnitNames_(){
+  const props=PropertiesService.getScriptProperties();
+  if(props.getProperty('IC_UNIT_NAMES_V2_MIGRATED')==='1')return;
   const rename={'สูติ':'สูติ-นรีเวช','รักษ์ใจ':'รักษ์ใจปันสุข','สงฆ์':'สงฆ์อาพาธ','NICU':'NICU-SNB','Sx':'ศัลยกรรมทั่วไป','Ortho':'ออร์โธปิดิกส์','อญ':'อายุรกรรมหญิง','อช':'อายุรกรรมชาย','พิเศษปาริฉัตร':'ปาริฉัตร','กุมาร':'กุมารเวชกรรม'};
   const ss=ss_(), units=ss.getSheetByName('Units');
   if(units.getLastRow()>1){
@@ -94,6 +96,7 @@ function syncUnitNames_(){
     values.forEach(r=>{const old=String(r[unitCol]||'');if(rename[old]){r[unitCol]=rename[old];changed=true;}});
     if(changed)sh.getRange(2,1,values.length,lastCol).setValues(values);
   });
+  props.setProperty('IC_UNIT_NAMES_V2_MIGRATED','1');
 }
 
 function seedUsers_(){
