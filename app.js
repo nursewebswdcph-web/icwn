@@ -111,12 +111,12 @@ async function loadUnitReport(){
   try{
     const month=$("unitReportMonth").value,period=month?{month}:{fiscal_year:Number($("unitFiscalYear").value)};
     const r=await api("getUnitReport",{unit:currentUnit,...period}),rows=r.rows||[],valid=rows.filter(x=>!x.missing);
-    const sum=k=>valid.reduce((s,x)=>s+(Number(x[k])||0),0),rate=(n,d,m=1000)=>d?n*m/d:null;
+    const sum=k=>valid.reduce((s,x)=>s+(Number(x[k])||0),0),staffMonths=valid.filter(x=>Number(x.staff_total)>0),staffAverage=staffMonths.length?sum("staff_total")/staffMonths.length:0,rate=(n,d,m=1000)=>d?n*m/d:null;
     const labour=isLabour(currentUnit);
     const cards=labour?[
       ["จำนวนผู้คลอดทั้งหมด",fmt(sum("total_deliveries"),0)],["จำนวนแผล Episiotomy",fmt(sum("episiotomy"),0)],["จำนวนแผล C/S",fmt(sum("cs_deliveries"),0)],
-      ["อุบัติเหตุบุคลากร",fmt(sum("injury"),0)+" ครั้ง · "+fmt(rate(sum("injury"),sum("staff_total"),100))+"%"],
-      ["การเจ็บป่วยบุคลากร",fmt(sum("illness"),0)+" ครั้ง · "+fmt(rate(sum("illness"),sum("staff_total"),100))+"%"]
+      ["อุบัติเหตุบุคลากร",fmt(sum("injury"),0)+" ครั้ง · "+fmt(rate(sum("injury"),staffAverage,100))+"%"],
+      ["การเจ็บป่วยบุคลากร",fmt(sum("illness"),0)+" ครั้ง · "+fmt(rate(sum("illness"),staffAverage,100))+"%"]
     ]:[
       ["วันนอนผู้ป่วยจำหน่าย",fmt(sum("patient_days"),0)],["ผู้ป่วยจำหน่าย",fmt(sum("discharged"),0)],["NI รวม",fmt(sum("hospital_ni"),0)],
       ["อัตรา NI ต่อ 1,000 วันนอน",fmt(rate(sum("hospital_ni"),sum("patient_days")))],
@@ -187,13 +187,13 @@ function renderReportTable(container,rows,columns){
 async function loadAdminReports(){
   try{
     const r=await api("getHospitalReport",adminPeriod()),rows=r.rows||[],tot=rows.reduce((a,x)=>{Object.keys(x).forEach(k=>{if(typeof x[k]==="number")a[k]=(a[k]||0)+x[k];});return a;},{});
-    const rate=(n,d,m=1000)=>d?n*m/d:null;
+    const rate=(n,d,m=1000)=>d?n*m/d:null,staffMonths=rows.filter(x=>Number(x.staff_total)>0),staffAverage=staffMonths.length?staffMonths.reduce((s,x)=>s+Number(x.staff_total),0)/staffMonths.length:0;
     metricCards("adminHospitalCards",[
       ["ผู้ป่วยทั้งหมด",fmt(tot.patient_total,0)],["VAP",fmt(rate(tot.vap_cases,tot.vap_days))],["CAUTI",fmt(rate(tot.cauti_cases,tot.foley_days))],
       ["P. Phlebitis",fmt(rate(tot.phlebitis_cases,tot.iv_lock_days))],["CLABSI",fmt(rate(tot.clabsi_cases,tot.clabsi_days))],
       ["SSI (%)",fmt(rate(tot.ssi_cases,tot.clean_wound,100))],["ติดเชื้อที่ตา (ครั้ง)",fmt(tot.eye_infection,0)],["ติดเชื้อที่สะดือ (ครั้ง)",fmt(tot.navel_infection,0)],
       ["ติดเชื้อ Episiotomy",fmt(tot.episiotomy_ni,0)],["ติดเชื้อแผล C/S",fmt(tot.cs_ni,0)],["วันนอนผู้ป่วยจำหน่าย",fmt(tot.patient_days,0)],
-      ["ติดเชื้อตำแหน่งอื่น",fmt(tot.other_infection,0)],["ติดเชื้อใน รพ.",fmt(tot.hospital_ni,0)],["อุบัติเหตุบุคลากร (%)",fmt(rate(tot.injury,tot.staff_total,100))],["เจ็บป่วยบุคลากร (%)",fmt(rate(tot.illness,tot.staff_total,100))]
+      ["ติดเชื้อตำแหน่งอื่น",fmt(tot.other_infection,0)],["ติดเชื้อใน รพ.",fmt(tot.hospital_ni,0)],["อุบัติเหตุบุคลากร (%)",fmt(rate(tot.injury,staffAverage,100))],["เจ็บป่วยบุคลากร (%)",fmt(rate(tot.illness,staffAverage,100))]
     ]);
     const reportTables=[
       ["ตารางที่ 1 การติดเชื้อที่สัมพันธ์กับการใช้อุปกรณ์การแพทย์",[["month","เดือน"],["vap_days","วัน On Ventilator"],["vap_cases","VAP"],["vap_rate","อัตรา VAP"],["foley_days","วัน On Foley's cath"],["cauti_cases","CAUTI"],["cauti_rate","อัตรา CAUTI"],["iv_lock_days","รวมวัน On IV & Lock"],["phlebitis_cases","Phlebitis ≥3"],["phlebitis_rate","อัตรา Phlebitis"],["cutdown_days","วัน On Cut down/DLC"],["cline_days","วัน On C-line"],["umbilical_days","วัน On Umbilical cath"],["clabsi_days","รวมวัน On Device"],["clabsi_cases","CLABSI"],["clabsi_rate","อัตรา CLABSI"]]],
