@@ -1,5 +1,5 @@
 /* Configure GOOGLE_CLIENT_ID and GAS_URL in this file before first use. */
-const CONFIG={GOOGLE_CLIENT_ID:"YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",GAS_URL:"YOUR_APPS_SCRIPT_WEB_APP_URL"};
+const CONFIG={GOOGLE_CLIENT_ID:"647367010976-opfd53df2f4ckhu58tbpjef5ve51h7li.apps.googleusercontent.com",GAS_URL:"YOUR_APPS_SCRIPT_WEB_APP_URL"};
 const UNITS=["พวงชมพู","สูติ","รักษ์ใจ","Stroke","เคมีบำบัด","สงฆ์","NICU","Sx","Ortho","ICU","อญ","อช","พิเศษปาริฉัตร","กุมาร","ห้องคลอด"];
 const STANDARD=[
 {title:"ข้อมูลทั่วไป",fields:[["patient_total","ผู้ป่วยทั้งหมด (ราย)"],["patient_days","วันนอนรวม (วัน)"],["discharged","ผู้ป่วยจำหน่าย (ราย)"],["staff_total","จำนวนบุคลากรทั้งหมด (คน)"],["nurse_total","จำนวนพยาบาลทั้งหมด (คน)"]]},
