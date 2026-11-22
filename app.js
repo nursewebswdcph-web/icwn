@@ -23,7 +23,49 @@ function allFields(){return [...new Set([...STANDARD,...PERSONNEL,...LABOUR].fla
 function emptyData(){return Object.fromEntries(allFields().map(k=>[k,""]));}
 function setMsg(t){$("saveMessage").textContent=t;}
 async function api(action,data={}){if(!CONFIG.GAS_URL||CONFIG.GAS_URL.includes("YOUR_"))throw new Error("กรุณาตั้งค่า GAS_URL ใน app.js ก่อนใช้งาน");const res=await fetch(CONFIG.GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,idToken,...data})});const j=await res.json();if(!j.ok)throw new Error(j.error||"API error");return j.data;}
-function loginCredential(resp){idToken=resp.credential;api("getMe").then(async me=>{user=me;const allowed=await api("getUnits");units=allowed.map(x=>x.name).sort((a,b)=>a.localeCompare(b,"th",{sensitivity:"base"}));$("userEmail").textContent=me.email;$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");$("signOutBtn").classList.remove("hidden");$("saveBtn").disabled=me.role==="Viewer";$("submitBtn").disabled=me.role==="Viewer";renderUnits();}).catch(e=>$("loginMessage").textContent=e.message);}
+let loginInProgress=false;
+function showLoginLoading(message="กำลังเข้าสู่ระบบ",detail="กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์และโหลดข้อมูล"){
+  const overlay=$("loginLoading");
+  if(!overlay)return;
+  $("loginLoadingTitle").textContent=message;
+  $("loginLoadingDetail").textContent=detail;
+  overlay.classList.remove("hidden");
+  overlay.setAttribute("aria-hidden","false");
+}
+function hideLoginLoading(){
+  const overlay=$("loginLoading");
+  if(!overlay)return;
+  overlay.classList.add("hidden");
+  overlay.setAttribute("aria-hidden","true");
+}
+async function loginCredential(resp){
+  if(loginInProgress)return;
+  if(!resp?.credential){$("loginMessage").textContent="ไม่สามารถรับข้อมูลจาก Google ได้ กรุณาลองอีกครั้ง";return;}
+  loginInProgress=true;
+  idToken=resp.credential;
+  showLoginLoading("กำลังตรวจสอบบัญชี Google","กำลังยืนยันตัวตนและตรวจสอบสิทธิ์การใช้งาน");
+  try{
+    user=await api("getMe");
+    $("loginLoadingTitle").textContent="กำลังโหลดข้อมูลหน่วยงาน";
+    $("loginLoadingDetail").textContent="ตรวจสอบสิทธิ์เรียบร้อยแล้ว กำลังเตรียมข้อมูลสำหรับใช้งาน";
+    const allowed=await api("getUnits");
+    units=allowed.map(x=>x.name).sort((a,b)=>a.localeCompare(b,"th",{sensitivity:"base"}));
+    $("userEmail").textContent=user.email;
+    $("saveBtn").disabled=user.role==="Viewer";
+    $("submitBtn").disabled=user.role==="Viewer";
+    renderUnits();
+    $("loginView").classList.add("hidden");
+    $("appView").classList.remove("hidden");
+    $("signOutBtn").classList.remove("hidden");
+    hideLoginLoading();
+  }catch(e){
+    idToken="";
+    $("loginMessage").textContent="เข้าสู่ระบบไม่สำเร็จ: "+(e?.message||"เกิดข้อผิดพลาด กรุณาลองใหม่");
+    hideLoginLoading();
+  }finally{
+    loginInProgress=false;
+  }
+}
 function initGoogle(){if(!window.google?.accounts?.id){setTimeout(initGoogle,300);return;}if(CONFIG.GOOGLE_CLIENT_ID.startsWith("YOUR_")){$("loginMessage").textContent="กรุณากำหนด GOOGLE_CLIENT_ID ใน app.js ก่อนเปิดใช้";return;}google.accounts.id.initialize({client_id:CONFIG.GOOGLE_CLIENT_ID,callback:loginCredential});google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",shape:"pill",text:"signin_with",locale:"th"});}
 function fieldMarkup(key,label){const textType=/_detail|_location|_symptoms|_organism|_factors/.test(key);return `<div class="field"><label for="${key}">${label}</label>${textType?`<textarea id="${key}" data-key="${key}" placeholder="ระบุข้อมูล (ถ้ามี)"></textarea>`:`<input id="${key}" data-key="${key}" type="number" min="0" step="any" inputmode="decimal" placeholder="0">`}</div>`;}
 function renderSections(){const sections=isLabour(currentUnit)?[...LABOUR,...PERSONNEL]:[...STANDARD,...PERSONNEL];$("formSections").innerHTML=sections.map((s,i)=>`<details class="section" open><summary>${String(i+1).padStart(2,"0")} · ${s.title}</summary><div class="section-body"><div class="field-grid">${s.fields.map(f=>fieldMarkup(f[0],f[1])).join("")}</div>${s.title.startsWith("อุบัติเหตุ")||s.title.startsWith("การเจ็บป่วย")?"":""}</div></details>`).join("")+`<div class="calc-row"><div class="metric"><small>รวมอุบัติเหตุ (ครั้ง)</small><strong id="injTotal">0</strong></div><div class="metric"><small>% อุบัติเหตุ</small><strong id="injRate">—</strong></div><div class="metric"><small>รวมเจ็บป่วย (ครั้ง)</small><strong id="illTotal">0</strong></div><div class="metric"><small>% ป่วย</small><strong id="illRate">—</strong></div></div>`;
