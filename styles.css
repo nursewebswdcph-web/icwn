@@ -153,3 +153,38 @@ th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:
 @media(max-width:420px){.field-grid{grid-template-columns:1fr}}
 .inp input::-webkit-outer-spin-button,.inp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.inp input[type=number]{-moz-appearance:textfield}
 body:has(#formPage:not(.hidden)) [aria-label="เมนูหน่วยงาน"]{display:none}
+
+/* Wide desktop: use the available viewport instead of a narrow fixed canvas */
+@media(min-width:840px){
+  body.authed main{
+    width:calc(100% - var(--rail));
+    max-width:none;
+    padding:clamp(24px,2.4vw,48px) clamp(24px,2.6vw,56px) 80px;
+  }
+  body.authed #adminView,
+  body.authed #appView{
+    width:100%;
+    max-width:none;
+  }
+  body.authed .panel,
+  body.authed .report-tables,
+  body.authed .table-scroll{
+    width:100%;
+    max-width:none;
+  }
+  body.authed .table-scroll{
+    overflow-x:auto;
+    overscroll-behavior-inline:contain;
+  }
+  body.authed .metric-grid{
+    grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));
+  }
+}
+@media(min-width:1600px){
+  body.authed main{
+    padding-left:clamp(48px,3vw,72px);
+    padding-right:clamp(48px,3vw,72px);
+  }
+  body.authed .panel{padding:24px;}
+}
+
