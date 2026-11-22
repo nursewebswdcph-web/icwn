@@ -185,6 +185,9 @@ function route_(action,b,user){
     case 'submitRecord': return saveRecord_(b,user,'SUBMITTED');
     case 'getHospitalSummary': return getHospitalSummary_(b.month,user);
     case 'saveHospitalInput': return saveHospitalInput_(b,user);
+    case 'getHospitalInputs': return getHospitalInputs_(b,user);
+    case 'getHospitalReport': return getHospitalReport_(b,user);
+    case 'getTHIPReport': return getTHIPReport_(b,user);
     default: throw new Error('ไม่รู้จักคำสั่ง '+action);
   }
 }
@@ -227,8 +230,83 @@ function getHospitalSummary_(month,user){
   const units=allowedUnits_(user).map(u=>({unit:u.name,completed:!!by[u.name],status:by[u.name]?by[u.name].status:'ยังไม่บันทึก'}));
   return {month:month,units:units,total:units.length,submitted:units.filter(x=>x.status==='SUBMITTED').length};
 }
+function getHospitalInputs_(b,user){
+  if(user.role!=='Admin')throw new Error('เฉพาะ Admin เท่านั้น');
+  const month=String(b.month||'');
+  const sh=ss_().getSheetByName('Hospital_Inputs'),rows=sh.getDataRange().getValues().slice(1),out={};
+  rows.forEach(r=>{if(String(r[0])===month)out[String(r[1])]=r[2];});
+  return {month:month,sterilization_passed:out.sterilization_passed??'',sterilization_total:out.sterilization_total??''};
+}
 function saveHospitalInput_(b,user){
   if(user.role!=='Admin')throw new Error('เฉพาะ Admin เท่านั้นที่บันทึกข้อมูลระดับโรงพยาบาลได้');
-  const sh=ss_().getSheetByName('Hospital_Inputs');sh.appendRow([b.month,b.field_key,b.value,b.note||'',new Date(),user.email]);
-  return {saved:true};
+  const month=String(b.month||'');
+  if(!/^\\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('รูปแบบเดือนต้องเป็น YYYY-MM');
+  if(month>Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'yyyy-MM'))throw new Error('ไม่อนุญาตให้บันทึกเดือนถัดไป');
+  const values=b.values||{};
+  const keys=['sterilization_passed','sterilization_total'];
+  keys.forEach(k=>{const v=values[k];if(v!==''&&v!==null&&v!==undefined&&(!Number.isFinite(Number(v))||Number(v)<0))throw new Error('ค่าต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป: '+k);});
+  if(values.sterilization_passed!==''&&values.sterilization_total!==''&&Number(values.sterilization_passed)>Number(values.sterilization_total))throw new Error('จำนวนครั้งที่ผ่านเกณฑ์ต้องไม่มากกว่าจำนวนครั้งที่ตรวจทั้งหมด');
+  const sh=ss_().getSheetByName('Hospital_Inputs');
+  const lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    keys.forEach(k=>{
+      const rows=sh.getDataRange().getValues();let row=0;
+      for(let i=1;i<rows.length;i++)if(String(rows[i][0])===month&&String(rows[i][1])===k){row=i+1;break;}
+      const record=[month,k,values[k]??'',b.note||'',new Date(),user.email];
+      if(row)sh.getRange(row,1,1,6).setValues([record]);else sh.appendRow(record);
+    });
+    return {saved:true,month:month,values:values};
+  }finally{lock.releaseLock();}
+}
+function reportMonths_(year,month){
+  if(month)return [month];
+  const fy=Number(year);
+  if(!fy)throw new Error('กรุณาระบุปีงบประมาณ');
+  const start=fy-544;
+  return Array.from({length:12},(_,i)=>{const d=new Date(start,9+i,1);return Utilities.formatDate(d,CONFIG.TIMEZONE,'yyyy-MM');});
+}
+function getHospitalReport_(b,user){
+  if(user.role!=='Admin')throw new Error('เฉพาะ Admin เท่านั้น');
+  const months=reportMonths_(b.fiscal_year,b.month),sh=ss_().getSheetByName('Records');
+  const rows=sh.getDataRange().getValues().slice(1),by={};
+  rows.forEach(r=>{if(months.includes(String(r[2]))){const k=String(r[2]);(by[k]||(by[k]=[])).push({unit:r[1],p:JSON.parse(r[5]||'{}')});}});
+  return {months:months,rows:months.map(m=>aggregateMonth_(m,by[m]||[]))};
+}
+function aggregateMonth_(month,records){
+  const sum=k=>records.reduce((a,r)=>a+(Number(r.p[k])||0),0);
+  const deviceDays=sum('foley_days'),ventDays=sum('ventilator_days'),ivDays=sum('iv_days')+sum('heparin_days');
+  const allDevice=sum('cline_days')+sum('umbilical_days');
+  const injury=sum('inj_needle')+sum('inj_blade')+sum('inj_tube_glass')+sum('inj_other_sharp')+sum('inj_eye')+sum('inj_mouth');
+  const illness=sum('ill_respiratory')+sum('ill_gastro')+sum('ill_conjunctivitis')+sum('ill_chickenpox')+sum('ill_mumps')+sum('ill_herpes')+sum('ill_tb')+sum('ill_other');
+  const hospitalInputs=ss_().getSheetByName('Hospital_Inputs').getDataRange().getValues().slice(1).filter(r=>String(r[0])===month);
+  const hi={};hospitalInputs.forEach(r=>hi[String(r[1])]=Number(r[2])||0);
+  return {month,patient_total:sum('patient_total'),patient_days:sum('patient_days'),discharged:sum('discharged'),
+    vap_days:ventDays,vap_cases:sum('vap_cases'),vap_rate:ventDays?sum('vap_cases')*1000/ventDays:null,
+    foley_days:deviceDays,cauti_cases:sum('cauti_cases'),cauti_rate:deviceDays?sum('cauti_cases')*1000/deviceDays:null,
+    iv_lock_days:ivDays,phlebitis_cases:sum('phlebitis_cases'),phlebitis_rate:ivDays?sum('phlebitis_cases')*1000/ivDays:null,
+    clabsi_days:allDevice,clabsi_cases:sum('clabsi_cases'),clabsi_rate:allDevice?sum('clabsi_cases')*1000/allDevice:null,
+    ssi_clean:sum('clean_wound'),ssi_cases:sum('ssi_cases'),ssi_rate:sum('clean_wound')?sum('ssi_cases')*100/sum('clean_wound'):null,
+    eye_infection:sum('eye_infection'),navel_infection:sum('navel_infection'),
+    episiotomy_ni:sum('episiotomy_ni'),cs_ni:sum('cs_ni'),
+    other_infection:sum('other_infection'),hospital_ni:sum('hospital_ni'),
+    staff_total:sum('staff_total'),injury,injury_rate:sum('staff_total')?injury*100/sum('staff_total'):null,
+    illness,illness_rate:sum('staff_total')?illness*100/sum('staff_total'):null,
+    sterilization_passed:hi.sterilization_passed??null,sterilization_total:hi.sterilization_total??null,
+    sterilization_rate:hi.sterilization_total?hi.sterilization_passed*100/hi.sterilization_total:null};
+}
+function getTHIPReport_(b,user){
+  if(user.role!=='Admin')throw new Error('เฉพาะ Admin เท่านั้น');
+  const months=reportMonths_(b.fiscal_year,b.month),sh=ss_().getSheetByName('Records'),rows=sh.getDataRange().getValues().slice(1);
+  const output=months.map(month=>{
+    const rec=rows.filter(r=>String(r[2])===month).map(r=>({unit:r[1],p:JSON.parse(r[5]||'{}')}));
+    const group=(names,key)=>rec.filter(r=>names.includes(r.unit)).reduce((s,r)=>s+(Number(r.p[key])||0),0);
+    const all=key=>rec.reduce((s,r)=>s+(Number(r.p[key])||0),0);
+    const icu=['ICU','NICU-SNB'];
+    const vap=all('vap_cases'),vapDays=all('ventilator_days'),vapIcu=group(icu,'vap_cases'),vapDaysIcu=group(icu,'ventilator_days');
+    const cauti=all('cauti_cases'),foley=all('foley_days'),cautiIcu=group(icu,'cauti_cases'),foleyIcu=group(icu,'foley_days');
+    const injury=all('inj_needle')+all('inj_blade')+all('inj_tube_glass')+all('inj_other_sharp')+all('inj_eye')+all('inj_mouth');
+    const staff=all('staff_total'),h=ss_().getSheetByName('Hospital_Inputs').getDataRange().getValues().slice(1).filter(r=>String(r[0])===month),hi={};h.forEach(r=>hi[r[1]]=Number(r[2])||0);
+    return {month,vap_cases:vap,vap_days:vapDays,vap_rate:vapDays?vap*1000/vapDays:null,vap_icu_cases:vapIcu,vap_icu_days:vapDaysIcu,vap_icu_rate:vapDaysIcu?vapIcu*1000/vapDaysIcu:null,vap_non_icu_cases:vap-vapIcu,vap_non_icu_days:vapDays-vapDaysIcu,vap_non_icu_rate:(vapDays-vapDaysIcu)?(vap-vapIcu)*1000/(vapDays-vapDaysIcu):null,cauti_cases:cauti,foley_days:foley,cauti_rate:foley?cauti*1000/foley:null,cauti_icu_cases:cautiIcu,cauti_icu_days:foleyIcu,cauti_icu_rate:foleyIcu?cautiIcu*1000/foleyIcu:null,cauti_non_icu_cases:cauti-cautiIcu,cauti_non_icu_days:foley-foleyIcu,cauti_non_icu_rate:(foley-foleyIcu)?(cauti-cautiIcu)*1000/(foley-foleyIcu):null,injury,staff_average:staff,injury_rate:staff?injury*100/staff:null,sterilization_passed:hi.sterilization_passed??0,sterilization_total:hi.sterilization_total??0,sterilization_rate:hi.sterilization_total?hi.sterilization_passed*100/hi.sterilization_total:null};
+  });
+  return {months,rows:output};
 }
