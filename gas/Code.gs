@@ -295,8 +295,8 @@ function aggregateMonth_(month,records){
     eye_infection:sum('eye_infection'),navel_infection:sum('navel_infection'),
     episiotomy_ni:sum('episiotomy_ni'),cs_ni:sum('cs_ni'),
     other_infection:sum('other_infection'),hospital_ni:sum('hospital_ni'),
-    staff_total:sum('staff_total'),injury,injury_rate:sum('staff_total')?injury*100/sum('staff_total'):null,
-    illness,illness_rate:sum('staff_total')?illness*100/sum('staff_total'):null,
+    staff_total:sum('staff_total'),nurse_total:sum('nurse_total'),inj_needle:sum('inj_needle'),inj_blade:sum('inj_blade'),inj_tube_glass:sum('inj_tube_glass'),inj_other_sharp:sum('inj_other_sharp'),inj_eye:sum('inj_eye'),inj_mouth:sum('inj_mouth'),injury,injury_rate:sum('staff_total')?injury*100/sum('staff_total'):null,
+    ill_respiratory:sum('ill_respiratory'),ill_gastro:sum('ill_gastro'),ill_conjunctivitis:sum('ill_conjunctivitis'),ill_chickenpox:sum('ill_chickenpox'),ill_mumps:sum('ill_mumps'),ill_herpes:sum('ill_herpes'),ill_tb:sum('ill_tb'),ill_other:sum('ill_other'),illness,illness_rate:sum('staff_total')?illness*100/sum('staff_total'):null,
     sterilization_passed:hi.sterilization_passed??null,sterilization_total:hi.sterilization_total??null,
     sterilization_rate:hi.sterilization_total?hi.sterilization_passed*100/hi.sterilization_total:null};
 }
