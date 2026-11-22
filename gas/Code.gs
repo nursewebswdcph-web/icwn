@@ -305,6 +305,10 @@ function aggregateMonth_(month,records){
 function getTHIPReport_(b,user){
   if(user.role!=='Admin')throw new Error('เฉพาะ Admin เท่านั้น');
   const months=reportMonths_(b.fiscal_year,b.month),sh=ss_().getSheetByName('Records'),rows=sh.getDataRange().getValues().slice(1);
+  const selectedFY=Number(b.fiscal_year)||fiscalYear_(months[0]);
+  const fyMonths=reportMonths_(selectedFY),staffByMonth={};
+  rows.forEach(r=>{if(fyMonths.includes(String(r[2]))){const k=String(r[2]);staffByMonth[k]=(staffByMonth[k]||0)+(Number(JSON.parse(r[5]||'{}').staff_total)||0);}});
+  const staffValues=Object.values(staffByMonth).filter(v=>v>0),staffAnnualAverage=staffValues.length?staffValues.reduce((s,v)=>s+v,0)/staffValues.length:0;
   const output=months.map(month=>{
     const rec=rows.filter(r=>String(r[2])===month).map(r=>({unit:r[1],p:JSON.parse(r[5]||'{}')}));
     const group=(names,key)=>rec.filter(r=>names.includes(r.unit)).reduce((s,r)=>s+(Number(r.p[key])||0),0);
@@ -313,7 +317,7 @@ function getTHIPReport_(b,user){
     const vap=all('vap_cases'),vapDays=all('ventilator_days'),vapIcu=group(icu,'vap_cases'),vapDaysIcu=group(icu,'ventilator_days');
     const cauti=all('cauti_cases'),foley=all('foley_days'),cautiIcu=group(icu,'cauti_cases'),foleyIcu=group(icu,'foley_days');
     const injury=all('inj_needle')+all('inj_blade')+all('inj_tube_glass')+all('inj_other_sharp')+all('inj_eye')+all('inj_mouth');
-    const staff=all('staff_total'),h=ss_().getSheetByName('Hospital_Inputs').getDataRange().getValues().slice(1).filter(r=>String(r[0])===month),hi={};h.forEach(r=>hi[r[1]]=Number(r[2])||0);
+    const staff=staffAnnualAverage,h=ss_().getSheetByName('Hospital_Inputs').getDataRange().getValues().slice(1).filter(r=>String(r[0])===month),hi={};h.forEach(r=>hi[r[1]]=Number(r[2])||0);
     return {month,vap_cases:vap,vap_days:vapDays,vap_rate:vapDays?vap*1000/vapDays:null,vap_icu_cases:vapIcu,vap_icu_days:vapDaysIcu,vap_icu_rate:vapDaysIcu?vapIcu*1000/vapDaysIcu:null,vap_non_icu_cases:vap-vapIcu,vap_non_icu_days:vapDays-vapDaysIcu,vap_non_icu_rate:(vapDays-vapDaysIcu)?(vap-vapIcu)*1000/(vapDays-vapDaysIcu):null,cauti_cases:cauti,foley_days:foley,cauti_rate:foley?cauti*1000/foley:null,cauti_icu_cases:cautiIcu,cauti_icu_days:foleyIcu,cauti_icu_rate:foleyIcu?cautiIcu*1000/foleyIcu:null,cauti_non_icu_cases:cauti-cautiIcu,cauti_non_icu_days:foley-foleyIcu,cauti_non_icu_rate:(foley-foleyIcu)?(cauti-cautiIcu)*1000/(foley-foleyIcu):null,injury,staff_average:staff,injury_rate:staff?injury*100/staff:null,sterilization_passed:hi.sterilization_passed??0,sterilization_total:hi.sterilization_total??0,sterilization_rate:hi.sterilization_total?hi.sterilization_passed*100/hi.sterilization_total:null};
   });
   return {months,rows:output};
