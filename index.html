@@ -9,6 +9,14 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+<div id="loginLoading" class="loading-overlay hidden" role="status" aria-live="polite" aria-hidden="true">
+  <div class="loading-dialog">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <h2 id="loginLoadingTitle">กำลังเข้าสู่ระบบ</h2>
+    <p id="loginLoadingDetail">กรุณารอสักครู่ ระบบกำลังตรวจสอบสิทธิ์และโหลดข้อมูล</p>
+    <span class="loading-note">IC Indicator · โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</span>
+  </div>
+</div>
 <header class="topbar"><div class="brandmark">IC</div><div><strong>IC Indicator</strong><small>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</small></div><div class="top-actions"><span id="userEmail"></span><button id="signOutBtn" class="ghost hidden">ออกจากระบบ</button></div></header>
 <main>
 <section id="loginView" class="login-wrap">
