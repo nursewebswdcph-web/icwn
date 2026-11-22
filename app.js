@@ -50,6 +50,7 @@ async function loginCredential(resp){
     $("loginLoadingDetail").textContent="ตรวจสอบสิทธิ์เรียบร้อยแล้ว กำลังเตรียมข้อมูลสำหรับใช้งาน";
     const allowed=await api("getUnits");
     units=allowed.map(x=>x.name).sort((a,b)=>a.localeCompare(b,"th",{sensitivity:"base"}));
+    localStorage.setItem("icwn_google_id_token",idToken);
     $("userEmail").textContent=user.email;
     $("saveBtn").disabled=user.role==="Viewer";
     $("submitBtn").disabled=user.role==="Viewer";
@@ -69,13 +70,30 @@ async function loginCredential(resp){
     hideLoginLoading();
   }catch(e){
     idToken="";
+    localStorage.removeItem("icwn_google_id_token");
     $("loginMessage").textContent="เข้าสู่ระบบไม่สำเร็จ: "+(e?.message||"เกิดข้อผิดพลาด กรุณาลองใหม่");
     hideLoginLoading();
   }finally{
     loginInProgress=false;
   }
 }
-function initGoogle(){if(!window.google?.accounts?.id){setTimeout(initGoogle,300);return;}if(CONFIG.GOOGLE_CLIENT_ID.startsWith("YOUR_")){$("loginMessage").textContent="กรุณากำหนด GOOGLE_CLIENT_ID ใน app.js ก่อนเปิดใช้";return;}google.accounts.id.initialize({client_id:CONFIG.GOOGLE_CLIENT_ID,callback:loginCredential});google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",shape:"pill",text:"signin_with",locale:"th"});}
+function initGoogle(){
+  if(!window.google?.accounts?.id){setTimeout(initGoogle,300);return;}
+  if(CONFIG.GOOGLE_CLIENT_ID.startsWith("YOUR_")){$("loginMessage").textContent="กรุณากำหนด GOOGLE_CLIENT_ID ใน app.js ก่อนเปิดใช้";return;}
+  google.accounts.id.initialize({client_id:CONFIG.GOOGLE_CLIENT_ID,callback:loginCredential,auto_select:true});
+  google.accounts.id.renderButton($("googleButton"),{theme:"outline",size:"large",shape:"pill",text:"signin_with",locale:"th"});
+  restoreLoginSession();
+}
+async function restoreLoginSession(){
+  const savedToken=localStorage.getItem("icwn_google_id_token");
+  if(savedToken){
+    showLoginLoading("กำลังกู้คืนการเข้าสู่ระบบ","กำลังตรวจสอบเซสชันเดิมกับระบบ");
+    await loginCredential({credential:savedToken});
+    if(user)return;
+  }
+  // Google อาจออก ID token ใหม่ให้อัตโนมัติเมื่อ token เดิมหมดอายุ
+  google.accounts.id.prompt();
+}
 function fieldMarkup(key,label){const textType=/_detail|_location|_symptoms|_organism|_factors/.test(key);const m=label.match(/^(.*?)\s*\(([^()]*)\)\s*$/),name=m?m[1]:label,suf=m?m[2]:"";return `<div class="field"><label for="${key}">${name}</label>${textType?`<textarea id="${key}" data-key="${key}" placeholder="ระบุข้อมูล (ถ้ามี)"></textarea>`:`<div class="inp"><input id="${key}" data-key="${key}" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><span>${suf}</span></div>`}</div>`;}
 function renderSections(){const sections=isLabour(currentUnit)?[...LABOUR,...PERSONNEL]:[...STANDARD,...PERSONNEL];$("formSections").innerHTML=sections.map((s,i)=>`<details class="section" open><summary>${s.title}</summary><div class="section-body"><div class="field-grid">${s.fields.map(f=>fieldMarkup(f[0],f[1])).join("")}</div>${s.title.startsWith("อุบัติเหตุ")||s.title.startsWith("การเจ็บป่วย")?"":""}</div></details>`).join("")+`<div class="calc-row"><div class="metric"><small>รวมอุบัติเหตุ (ครั้ง)</small><strong id="injTotal">0</strong></div><div class="metric"><small>% อุบัติเหตุ</small><strong id="injRate">—</strong></div><div class="metric"><small>รวมเจ็บป่วย (ครั้ง)</small><strong id="illTotal">0</strong></div><div class="metric"><small>% ป่วย</small><strong id="illRate">—</strong></div></div>`;
 document.querySelectorAll("[data-key]").forEach(el=>{el.value=currentData[el.dataset.key]??"";el.addEventListener("input",()=>{currentData[el.dataset.key]=el.value;updateMetrics();});});updateMetrics();}
@@ -156,7 +174,7 @@ $("month").max=localMonth();$("month").value=localMonth();$("month").onchange=()
   document.querySelectorAll('[aria-label="เมนูหน่วยงาน"] .tab').forEach(x=>x.classList.toggle("active",x===b));
   if(b.dataset.page==="home"){hidePages();$("unitHomePage").classList.remove("hidden");$("pageTitle").textContent=currentUnit;loadUnitHistory();}
   if(b.dataset.page==="summary")showSummary();
-});$("signOutBtn").onclick=()=>{idToken="";user=null;google?.accounts?.id?.disableAutoSelect?.();location.reload();};
+});$("signOutBtn").onclick=()=>{idToken="";user=null;localStorage.removeItem("icwn_google_id_token");google?.accounts?.id?.disableAutoSelect?.();location.reload();};
 function adminPeriod(){
   const fy=Number($("adminFiscalYear").value),m=$("adminMonth").value;
   return m?{month:m}:{fiscal_year:fy};
