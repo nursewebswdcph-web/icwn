@@ -57,6 +57,7 @@ function ensureSheets_(){
   }
   const fields=ss.getSheetByName('Fields');
   if(fields.getLastRow()===1 && FIELD_DEFS.length) fields.getRange(2,1,FIELD_DEFS.length,6).setValues(FIELD_DEFS);
+  seedUsers_();
   const settings=ss.getSheetByName('Settings');
   if(settings.getLastRow()===1) settings.getRange(2,1,3,3).setValues([
     ['fiscal_year_start_month','10','ปีงบประมาณเริ่มเดือนตุลาคม'],
@@ -64,6 +65,64 @@ function ensureSheets_(){
     ['schema_version','1.0','รุ่นโครงสร้างฐานข้อมูล']
   ]);
 }
+
+/**
+ * Seed authorized users. All listed users can access every active unit.
+ * Existing unrelated user rows are preserved; listed accounts are upserted.
+ */
+function seedUsers_(){
+  const admins = [
+    'pinyadakongkaew@gmail.com',
+    'nut.kumnahom@gmail.com',
+    'nurse.web.swdcph@gmail.com'
+  ];
+  const editors = [
+    'priest.swdcph@gmail.com',
+    'aiwarisa1102@gmail.com',
+    'areerat6523@gmail.com',
+    'baew_ly@hotmail.com',
+    'bowapinya9@gmail.com',
+    'buatatae@gmail.com',
+    'carenwia5919@gmail.com',
+    'chemoswd@gmail.com',
+    'chenchira7001@gmail.com',
+    'device.swdcph@gmail.com',
+    'genetic.em@gmail.com',
+    'parichat4.vip@gmail.com',
+    'himavarika@gmail.com',
+    'hodsoda.31@gmail.com',
+    'jewfany@gmail.com',
+    'med.female2000@gmail.com',
+    'niloblphlsila2527@gmail.com',
+    'ningnatta2541@gmail.com',
+    'nittayawhai@gmail.com',
+    'oonrampa.kh28@gmail.com',
+    'phuweanwong@gmail.com',
+    'pianopreeya@gmail.com',
+    'plapari2536@gmail.com',
+    'puttamawadee2531@gmail.com',
+    'ruttanapon8685@gmail.com',
+    'santana.sa2522@gmail.com',
+    'strokeswang@gmail.com',
+    'sunaree6374@gmail.com',
+    'swd.ped@gmail.com',
+    'tanayung123@gmail.com'
+  ];
+  const sh=ss_().getSheetByName('Users');
+  const allUnits=UNIT_NAMES.join(',');
+  const rows=sh.getDataRange().getValues();
+  const index={};
+  rows.slice(1).forEach((r,i)=>{const email=String(r[0]||'').trim().toLowerCase();if(email)index[email]=i+2;});
+  admins.forEach(email=>upsertUser_(sh,index,email,'Admin',allUnits));
+  editors.forEach(email=>upsertUser_(sh,index,email,'Editor',allUnits));
+}
+function upsertUser_(sh,index,email,role,units){
+  const normalized=String(email).trim().toLowerCase();
+  const row=[normalized,role,units,true];
+  if(index[normalized]) sh.getRange(index[normalized],1,1,4).setValues([row]);
+  else {sh.appendRow(row);index[normalized]=sh.getLastRow();}
+}
+
 function verifyUser_(token){
   if(!token) throw new Error('ไม่พบ Google ID token กรุณาเข้าสู่ระบบใหม่');
   if(CONFIG.GOOGLE_CLIENT_ID.indexOf('YOUR_')===0) throw new Error('ผู้ดูแลระบบยังไม่ได้กำหนด GOOGLE_CLIENT_ID ใน Code.gs');
