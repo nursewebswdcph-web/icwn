@@ -188,6 +188,7 @@ function route_(action,b,user){
     case 'getHospitalInputs': return getHospitalInputs_(b,user);
     case 'getHospitalReport': return getHospitalReport_(b,user);
     case 'getTHIPReport': return getTHIPReport_(b,user);
+    case 'getUnitReport': return getUnitReport_(b,user);
     default: throw new Error('ไม่รู้จักคำสั่ง '+action);
   }
 }
@@ -309,4 +310,27 @@ function getTHIPReport_(b,user){
     return {month,vap_cases:vap,vap_days:vapDays,vap_rate:vapDays?vap*1000/vapDays:null,vap_icu_cases:vapIcu,vap_icu_days:vapDaysIcu,vap_icu_rate:vapDaysIcu?vapIcu*1000/vapDaysIcu:null,vap_non_icu_cases:vap-vapIcu,vap_non_icu_days:vapDays-vapDaysIcu,vap_non_icu_rate:(vapDays-vapDaysIcu)?(vap-vapIcu)*1000/(vapDays-vapDaysIcu):null,cauti_cases:cauti,foley_days:foley,cauti_rate:foley?cauti*1000/foley:null,cauti_icu_cases:cautiIcu,cauti_icu_days:foleyIcu,cauti_icu_rate:foleyIcu?cautiIcu*1000/foleyIcu:null,cauti_non_icu_cases:cauti-cautiIcu,cauti_non_icu_days:foley-foleyIcu,cauti_non_icu_rate:(foley-foleyIcu)?(cauti-cautiIcu)*1000/(foley-foleyIcu):null,injury,staff_average:staff,injury_rate:staff?injury*100/staff:null,sterilization_passed:hi.sterilization_passed??0,sterilization_total:hi.sterilization_total??0,sterilization_rate:hi.sterilization_total?hi.sterilization_passed*100/hi.sterilization_total:null};
   });
   return {months,rows:output};
+}
+function getUnitReport_(b,user){
+  const unit=String(b.unit||'');
+  if(!canView_(unit,user))throw new Error('ไม่มีสิทธิ์ดูหน่วยงานนี้');
+  const months=reportMonths_(b.fiscal_year,b.month),sh=ss_().getSheetByName('Records'),rows=sh.getDataRange().getValues().slice(1);
+  return {unit,months,rows:months.map(month=>{
+    const found=rows.find(r=>String(r[1])===unit&&String(r[2])===month);
+    if(!found)return {month,missing:true};
+    const p=JSON.parse(found[5]||'{}');
+    const injury=['inj_needle','inj_blade','inj_tube_glass','inj_other_sharp','inj_eye','inj_mouth'].reduce((s,k)=>s+(Number(p[k])||0),0);
+    const illness=['ill_respiratory','ill_gastro','ill_conjunctivitis','ill_chickenpox','ill_mumps','ill_herpes','ill_tb','ill_other'].reduce((s,k)=>s+(Number(p[k])||0),0);
+    const vent=Number(p.ventilator_days)||0,foley=Number(p.foley_days)||0,iv=(Number(p.iv_days)||0)+(Number(p.heparin_days)||0),device=(Number(p.cline_days)||0)+(Number(p.umbilical_days)||0);
+    const clean=Number(p.clean_wound)||0,staff=Number(p.staff_total)||0,live=Number(p.live_births)||0,deliveries=Number(p.deliveries)||0,epi=Number(p.episiotomy)||0,cs=Number(p.cs_deliveries)||0;
+    return {month,missing:false,status:found[4],patient_total:Number(p.patient_total)||0,patient_days:Number(p.patient_days)||0,discharged:Number(p.discharged)||0,
+      ventilator_days:vent,vap_cases:Number(p.vap_cases)||0,vap_rate:vent?(Number(p.vap_cases)||0)*1000/vent:null,
+      foley_days:foley,cauti_cases:Number(p.cauti_cases)||0,cauti_rate:foley?(Number(p.cauti_cases)||0)*1000/foley:null,
+      iv_days:Number(p.iv_days)||0,heparin_days:Number(p.heparin_days)||0,iv_lock_days:iv,phlebitis_cases:Number(p.phlebitis_cases)||0,phlebitis_rate:iv?(Number(p.phlebitis_cases)||0)*1000/iv:null,
+      cline_days:Number(p.cline_days)||0,umbilical_days:Number(p.umbilical_days)||0,clabsi_days:device,clabsi_cases:Number(p.clabsi_cases)||0,clabsi_rate:device?(Number(p.clabsi_cases)||0)*1000/device:null,
+      clean_wound:clean,clean_cont_wound:Number(p.clean_cont_wound)||0,contaminated_wound:Number(p.contaminated_wound)||0,dirty_wound:Number(p.dirty_wound)||0,ssi_cases:Number(p.ssi_cases)||0,ssi_rate:clean?(Number(p.ssi_cases)||0)*100/clean:null,
+      live_births:live,eye_infection:Number(p.eye_infection)||0,eye_rate:live?(Number(p.eye_infection)||0)*100/live:null,navel_infection:Number(p.navel_infection)||0,navel_rate:live?(Number(p.navel_infection)||0)*100/live:null,
+      deliveries:Number(p.deliveries)||0,episiotomy:epi,episiotomy_ni:Number(p.episiotomy_ni)||0,episiotomy_rate:epi?(Number(p.episiotomy_ni)||0)*100/epi:null,cs_deliveries:cs,cs_ni:Number(p.cs_ni)||0,cs_rate:cs?(Number(p.cs_ni)||0)*100/cs:null,
+      hospital_ni:Number(p.hospital_ni)||0,other_infection:Number(p.other_infection)||0,injury,injury_rate:staff?injury*100/staff:null,illness,illness_rate:staff?illness*100/staff:null,staff_total:staff};
+  })};
 }
