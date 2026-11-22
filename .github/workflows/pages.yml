@@ -22,7 +22,7 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Prepare public site
-        run: mkdir -p dist && cp -r index.html app.js extras.js styles.css manifest.webmanifest sw.js icons dist/
+        run: mkdir -p dist && cp -r index.html app.js styles.css manifest.webmanifest sw.js icons dist/
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
