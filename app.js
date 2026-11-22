@@ -55,7 +55,14 @@ async function loginCredential(resp){
     $("submitBtn").disabled=user.role==="Viewer";
     renderUnits();
     $("loginView").classList.add("hidden");
-    $("appView").classList.remove("hidden");
+    if(user.role==="Admin"){
+      $("adminView").classList.remove("hidden");
+      $("appView").classList.add("hidden");
+      initAdminView();
+    }else{
+      $("appView").classList.remove("hidden");
+      $("adminView").classList.add("hidden");
+    }
     $("signOutBtn").classList.remove("hidden");
     hideLoginLoading();
   }catch(e){
@@ -72,9 +79,97 @@ function renderSections(){const sections=isLabour(currentUnit)?[...LABOUR,...PER
 document.querySelectorAll("[data-key]").forEach(el=>{el.value=currentData[el.dataset.key]??"";el.addEventListener("input",()=>{currentData[el.dataset.key]=el.value;updateMetrics();});});updateMetrics();}
 function updateMetrics(){const injury=["inj_needle","inj_blade","inj_tube_glass","inj_other_sharp","inj_eye","inj_mouth"].reduce((s,k)=>s+num(currentData[k]),0);const illness=["ill_respiratory","ill_gastro","ill_conjunctivitis","ill_chickenpox","ill_mumps","ill_herpes","ill_tb","ill_other"].reduce((s,k)=>s+num(currentData[k]),0);const staff=num(currentData.staff_total);$("injTotal").textContent=injury;$("illTotal").textContent=illness;$("injRate").textContent=staff?(injury*100/staff).toFixed(2)+"%":"—";$("illRate").textContent=staff?(illness*100/staff).toFixed(2)+"%":"—";}
 async function openUnit(unit){currentUnit=unit;$("saveBtn").disabled=user?.role==="Viewer";$("submitBtn").disabled=user?.role==="Viewer";currentData=emptyData();currentRecord=null;$("unitsPage").classList.add("hidden");$("summaryPage").classList.add("hidden");$("historyPage").classList.add("hidden");$("formPage").classList.remove("hidden");$("unitTitle").textContent=unit;$("pageTitle").textContent=unit;renderSections();try{const rec=await api("getRecord",{unit,month:$("month").value});if(rec){currentRecord=rec;currentData={...currentData,...rec.payload};document.querySelectorAll("[data-key]").forEach(el=>el.value=currentData[el.dataset.key]??"");updateMetrics();$("recordStatus").textContent=rec.status==="SUBMITTED"?"ส่งแล้ว":"ฉบับร่าง";$("recordStatus").className="status "+(rec.status==="SUBMITTED"?"submitted":"draft");}}catch(e){setMsg(e.message);}}
-function renderUnits(){ $("unitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-unit="${u}"><strong><i class="unit-dot"></i>${u}</strong><small>บันทึกสรุปรายเดือน →</small></button>`).join("");document.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>openUnit(b.dataset.unit));}
+function renderUnits(){
+  $("unitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-unit="${u}"><strong><i class="unit-dot"></i>${u}</strong><small>เปิดระบบหน่วยงาน →</small></button>`).join("");
+  document.querySelectorAll("#unitGrid [data-unit]").forEach(b=>b.onclick=()=>selectUnit(b.dataset.unit));
+}
+async function selectUnit(unit){
+  currentUnit=unit;hidePages();$("unitHomePage").classList.remove("hidden");
+  $("unitHomeTitle").textContent=unit;$("pageTitle").textContent=unit;
+  await loadUnitHistory();
+}
+async function loadUnitHistory(){
+  try{
+    const rows=await api("listRecords",{});
+    const list=(rows||[]).filter(r=>r.unit===currentUnit).sort((x,y)=>y.month.localeCompare(x.month));
+    $("unitHistoryContent").innerHTML=list.length?`<table><thead><tr><th>เดือน</th><th>สถานะ</th><th>แก้ไขล่าสุด</th><th></th></tr></thead><tbody>${list.map(r=>`<tr><td>${r.month}</td><td>${r.status==="SUBMITTED"?"ส่งแล้ว":"ฉบับร่าง"}</td><td>${r.updated_at?new Date(r.updated_at).toLocaleString("th-TH"):"—"}</td><td><button class="back" data-open-month="${r.month}">เปิดรายการ</button></td></tr>`).join("")}</tbody></table>`:"<p class='muted'>ยังไม่มีประวัติการบันทึกของหน่วยงานนี้</p>";
+    document.querySelectorAll("[data-open-month]").forEach(b=>b.onclick=()=>{ $("month").value=b.dataset.openMonth;openUnit(currentUnit);});
+  }catch(e){$("unitHistoryContent").textContent=e.message;}
+}
 async function save(submit=false){try{document.querySelectorAll("[data-key]").forEach(el=>currentData[el.dataset.key]=el.value);const result=await api(submit?"submitRecord":"saveRecord",{unit:currentUnit,month:$("month").value,payload:currentData,version:currentRecord?.version||0});currentRecord=result;$("recordStatus").textContent=submit?"ส่งแล้ว":"ฉบับร่าง";$("recordStatus").className="status "+(submit?"submitted":"draft");setMsg(submit?"ส่งรายงานเรียบร้อย":"บันทึกข้อมูลเรียบร้อย");}catch(e){setMsg("บันทึกไม่สำเร็จ: "+e.message);}}
 async function showSummary(){hidePages();$("summaryPage").classList.remove("hidden");$("pageTitle").textContent="ภาพรวม";try{const s=await api("getHospitalSummary",{month:$("month").value});$("summaryContent").innerHTML=(s.units||[]).map(x=>`<div class="summary-card"><strong>${x.completed?"✓":"—"}</strong><span>${x.unit} · ${x.status||"ยังไม่บันทึก"}</span></div>`).join("");}catch(e){$("summaryContent").textContent=e.message;}}
-function hidePages(){$("unitsPage").classList.add("hidden");$("formPage").classList.add("hidden");$("summaryPage").classList.add("hidden");$("historyPage").classList.add("hidden");}
+function hidePages(){$("unitsPage").classList.add("hidden");$("unitHomePage").classList.add("hidden");$("formPage").classList.add("hidden");$("summaryPage").classList.add("hidden");$("historyPage").classList.add("hidden");}
 async function showHistory(){hidePages();$("historyPage").classList.remove("hidden");$("pageTitle").textContent="ประวัติ";try{const list=await api("listRecords",{month:$("month").value});$("historyContent").innerHTML=`<table><thead><tr><th>หน่วยงาน</th><th>เดือน</th><th>สถานะ</th></tr></thead><tbody>${(list||[]).map(r=>`<tr><td>${r.unit}</td><td>${r.month}</td><td>${r.status}</td></tr>`).join("")}</tbody></table>`;}catch(e){$("historyContent").textContent=e.message;}}
-$("saveBtn").onclick=()=>save(false);$("submitBtn").onclick=()=>save(true);$("backUnits").onclick=()=>{hidePages();$("unitsPage").classList.remove("hidden");$("pageTitle").textContent="เลือกหน่วยงาน";};$("month").value=new Date().toISOString().slice(0,7);$("month").onchange=()=>{if(currentUnit)openUnit(currentUnit);};document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));if(b.dataset.page==="units"){hidePages();$("unitsPage").classList.remove("hidden");$("pageTitle").textContent="เลือกหน่วยงาน";}if(b.dataset.page==="summary")showSummary();if(b.dataset.page==="history")showHistory();});$("signOutBtn").onclick=()=>{idToken="";user=null;google?.accounts?.id?.disableAutoSelect?.();location.reload();};initGoogle();
+$("saveBtn").onclick=()=>save(false);$("submitBtn").onclick=()=>save(true);$("backUnits").onclick=()=>{hidePages();$("unitHomePage").classList.remove("hidden");$("pageTitle").textContent=currentUnit;loadUnitHistory();};
+$("addMonthlyRecord").onclick=()=>{const now=new Date();$("month").value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");openUnit(currentUnit);};
+$("month").max=new Date().toISOString().slice(0,7);$("month").value=new Date().toISOString().slice(0,7);$("month").onchange=()=>{if(currentUnit){if($("month").value>new Date().toISOString().slice(0,7)){$("month").value=new Date().toISOString().slice(0,7);return;}openUnit(currentUnit);}};document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));if(b.dataset.page==="units"){hidePages();$("unitsPage").classList.remove("hidden");$("pageTitle").textContent="เลือกหน่วยงาน";}if(b.dataset.page==="summary")showSummary();if(b.dataset.page==="history")showHistory();});$("signOutBtn").onclick=()=>{idToken="";user=null;google?.accounts?.id?.disableAutoSelect?.();location.reload();};
+function adminPeriod(){
+  const fy=Number($("adminFiscalYear").value),m=$("adminMonth").value;
+  return m?{month:m}:{fiscal_year:fy};
+}
+function initAdminView(){
+  const now=new Date(),fy=now.getMonth()>=9?now.getFullYear()+544:now.getFullYear()+543;
+  $("adminFiscalYear").innerHTML=Array.from({length:6},(_,i)=>fy-i).map(y=>`<option value="${y}">${y}</option>`).join("");
+  $("adminFiscalYear").value=String(fy);$("adminMonth").max=now.toISOString().slice(0,7);
+  $("adminFiscalYear").onchange=()=>loadAdminReports();
+  $("adminMonth").onchange=()=>loadAdminReports();
+  document.querySelectorAll("[data-admin-page]").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("[data-admin-page]").forEach(x=>x.classList.toggle("active",x===b));
+    ["adminHospitalPage","adminThipPage","adminUnitsPage"].forEach((id,i)=>$(id).classList.toggle("hidden",id!==["adminHospitalPage","adminThipPage","adminUnitsPage"][["hospital","thip","units"].indexOf(b.dataset.adminPage)]));
+    if(b.dataset.adminPage==="units")renderAdminUnits();
+    if(b.dataset.adminPage==="thip")loadAdminThip();
+  });
+  $("saveSterilization").onclick=saveSterilization;
+  loadAdminReports();loadAdminThip();
+}
+function renderAdminUnits(){
+  $("adminUnitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-admin-unit="${u}"><strong><i class="unit-dot"></i>${u}</strong><small>เข้าบันทึกข้อมูล →</small></button>`).join("");
+  document.querySelectorAll("[data-admin-unit]").forEach(b=>b.onclick=()=>{currentUnit=b.dataset.adminUnit;$("adminView").classList.add("hidden");$("appView").classList.remove("hidden");hidePages();$("unitHomePage").classList.remove("hidden");$("unitHomeTitle").textContent=currentUnit;$("pageTitle").textContent=currentUnit;loadUnitHistory();});
+}
+function metricCards(container,items){
+  $(container).innerHTML=items.map(x=>`<div class="metric-card"><small>${x[0]}</small><strong>${x[1]}</strong></div>`).join("");
+}
+function fmt(v,d=2){return v===null||v===undefined||v===""?"—":Number(v).toLocaleString("th-TH",{maximumFractionDigits:d});}
+function renderReportTable(container,rows,columns){
+  $(container).innerHTML=`<table><thead><tr>${columns.map(c=>`<th>${c[1]}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${columns.map(c=>`<td>${c[0]==="month"?r.month:fmt(r[c[0]])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+async function loadAdminReports(){
+  try{
+    const r=await api("getHospitalReport",adminPeriod()),rows=r.rows||[],tot=rows.reduce((a,x)=>{Object.keys(x).forEach(k=>{if(typeof x[k]==="number")a[k]=(a[k]||0)+x[k];});return a;},{});
+    const rate=(n,d,m=1000)=>d?n*m/d:null;
+    metricCards("adminHospitalCards",[
+      ["ผู้ป่วยทั้งหมด",fmt(tot.patient_total,0)],["VAP",fmt(rate(tot.vap_cases,tot.vap_days))],["CAUTI",fmt(rate(tot.cauti_cases,tot.foley_days))],
+      ["P. Phlebitis",fmt(rate(tot.phlebitis_cases,tot.iv_lock_days))],["CLABSI",fmt(rate(tot.clabsi_cases,tot.clabsi_days))],
+      ["SSI (%)",fmt(rate(tot.ssi_cases,tot.ssi_clean,100))],["ติดเชื้อที่ตา (ครั้ง)",fmt(tot.eye_infection,0)],["ติดเชื้อที่สะดือ (ครั้ง)",fmt(tot.navel_infection,0)],
+      ["ติดเชื้อ Episiotomy",fmt(tot.episiotomy_ni,0)],["ติดเชื้อแผล C/S",fmt(tot.cs_ni,0)],["วันนอนผู้ป่วยจำหน่าย",fmt(tot.patient_days,0)],
+      ["ติดเชื้อตำแหน่งอื่น",fmt(tot.other_infection,0)],["ติดเชื้อใน รพ.",fmt(tot.hospital_ni,0)],["อุบัติเหตุบุคลากร (%)",fmt(rate(tot.injury,tot.staff_total,100))],["เจ็บป่วยบุคลากร (%)",fmt(rate(tot.illness,tot.staff_total,100))]
+    ]);
+    renderReportTable("adminHospitalTable",rows,[["month","เดือน"],["vap_days","วัน On Ventilator"],["vap_cases","VAP"],["vap_rate","อัตรา VAP"],["foley_days","วัน On Foley"],["cauti_cases","CAUTI"],["cauti_rate","อัตรา CAUTI"],["iv_lock_days","วัน On IV & Lock"],["phlebitis_cases","Phlebitis ≥3"],["phlebitis_rate","อัตรา Phlebitis"],["clabsi_days","วัน On Device"],["clabsi_cases","CLABSI"],["clabsi_rate","อัตรา CLABSI"],["ssi_clean","Clean wound"],["ssi_cases","SSI"],["ssi_rate","SSI (%)"],["eye_infection","ติดเชื้อที่ตา"],["navel_infection","ติดเชื้อที่สะดือ"],["episiotomy_ni","ติดเชื้อ Episiotomy"],["cs_ni","ติดเชื้อ C/S"],["other_infection","ติดเชื้ออื่น"],["hospital_ni","ติดเชื้อใน รพ."]]);
+  }catch(e){$("adminHospitalTable").textContent=e.message;}
+}
+async function loadAdminThip(){
+  try{
+    const period=adminPeriod(),r=await api("getTHIPReport",period),rows=r.rows||[];
+    const total=rows.reduce((a,x)=>{["vap_cases","vap_icu_cases","vap_non_icu_cases","cauti_cases","cauti_icu_cases","cauti_non_icu_cases","injury","staff_average","sterilization_passed","sterilization_total"].forEach(k=>a[k]=(a[k]||0)+(Number(x[k])||0));return a;},{});
+    metricCards("adminThipCards",[
+      ["VAP รวม",fmt(total.vap_cases,0)],["VAP ใน ICU & NICU",fmt(total.vap_icu_cases,0)],["VAP นอก ICU",fmt(total.vap_non_icu_cases,0)],
+      ["CAUTI รวม",fmt(total.cauti_cases,0)],["CAUTI ใน ICU",fmt(total.cauti_icu_cases,0)],["CAUTI นอก ICU",fmt(total.cauti_non_icu_cases,0)],
+      ["บุคลากรบาดเจ็บ (%)",fmt(total.staff_average?total.injury*100/total.staff_average:null)],["ตรวจปราศจากเชื้อผ่าน (%)",fmt(total.sterilization_total?total.sterilization_passed*100/total.sterilization_total:null)]
+    ]);
+    renderReportTable("adminThipTable",rows,[["month","เดือน"],["vap_cases","VAP รวม (ครั้ง)"],["vap_days","วันใช้เครื่องช่วยหายใจ"],["vap_rate","VAP รวม"],["vap_icu_cases","VAP ICU/NICU (ครั้ง)"],["vap_icu_days","วันใช้เครื่องช่วยหายใจ ICU"],["vap_icu_rate","VAP ICU/NICU"],["vap_non_icu_rate","VAP นอก ICU"],["cauti_cases","CAUTI รวม (ครั้ง)"],["foley_days","วันคาสายสวน"],["cauti_rate","CAUTI รวม"],["cauti_icu_cases","CAUTI ICU (ครั้ง)"],["cauti_icu_days","วันคาสายสวน ICU"],["cauti_icu_rate","CAUTI ICU"],["cauti_non_icu_rate","CAUTI นอก ICU"],["injury","บาดเจ็บจากงาน (ครั้ง)"],["staff_average","บุคลากรเฉลี่ย"],["injury_rate","บาดเจ็บ (%)"],["sterilization_passed","ตรวจผ่าน"],["sterilization_total","ตรวจทั้งหมด"],["sterilization_rate","ตรวจผ่าน (%)"]]);
+    const month=$("adminMonth").value||new Date().toISOString().slice(0,7);
+    const h=await api("getHospitalInputs",{month});
+    $("sterilizationPassed").value=h.sterilization_passed??"";$("sterilizationTotal").value=h.sterilization_total??"";
+  }catch(e){$("adminThipTable").textContent=e.message;}
+}
+async function saveSterilization(){
+  const month=$("adminMonth").value||new Date().toISOString().slice(0,7),passed=$("sterilizationPassed").value,total=$("sterilizationTotal").value;
+  try{
+    if(passed===""||total==="")throw new Error("กรุณากรอกข้อมูลทั้ง 2 ค่า");
+    if(Number(passed)>Number(total))throw new Error("จำนวนครั้งที่ผ่านเกณฑ์ต้องไม่มากกว่าจำนวนครั้งที่ตรวจทั้งหมด");
+    await api("saveHospitalInput",{month,values:{sterilization_passed:Number(passed),sterilization_total:Number(total)}});
+    $("sterilizationMessage").textContent="บันทึกข้อมูลเรียบร้อย";loadAdminThip();loadAdminReports();
+  }catch(e){$("sterilizationMessage").textContent="บันทึกไม่สำเร็จ: "+e.message;}
+}
+
+initGoogle();
