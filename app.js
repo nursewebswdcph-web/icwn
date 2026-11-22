@@ -97,7 +97,7 @@ async function loadUnitHistory(){
   }catch(e){$("unitHistoryContent").textContent=e.message;}
 }
 async function save(submit=false){try{document.querySelectorAll("[data-key]").forEach(el=>currentData[el.dataset.key]=el.value);const result=await api(submit?"submitRecord":"saveRecord",{unit:currentUnit,month:$("month").value,payload:currentData,version:currentRecord?.version||0});currentRecord=result;$("recordStatus").textContent=submit?"ส่งแล้ว":"ฉบับร่าง";$("recordStatus").className="status "+(submit?"submitted":"draft");setMsg(submit?"ส่งรายงานเรียบร้อย":"บันทึกข้อมูลเรียบร้อย");}catch(e){setMsg("บันทึกไม่สำเร็จ: "+e.message);}}
-async async function showSummary(){
+async function showSummary(){
   hidePages();$("summaryPage").classList.remove("hidden");$("pageTitle").textContent="สรุปรายงานหน่วยงาน";
   const now=new Date(),fy=now.getMonth()>=9?now.getFullYear()+544:now.getFullYear()+543;
   if(!$("unitFiscalYear").options.length)$("unitFiscalYear").innerHTML=Array.from({length:6},(_,i)=>fy-i).map(y=>`<option value="${y}">${y}</option>`).join("");
@@ -114,7 +114,7 @@ async function loadUnitReport(){
     const sum=k=>valid.reduce((s,x)=>s+(Number(x[k])||0),0),rate=(n,d,m=1000)=>d?n*m/d:null;
     const labour=isLabour(currentUnit);
     const cards=labour?[
-      ["จำนวนผู้คลอดทั้งหมด",fmt(sum("deliveries"),0)],["จำนวนแผล Episiotomy",fmt(sum("episiotomy"),0)],["จำนวนแผล C/S",fmt(sum("cs_deliveries"),0)],
+      ["จำนวนผู้คลอดทั้งหมด",fmt(sum("total_deliveries"),0)],["จำนวนแผล Episiotomy",fmt(sum("episiotomy"),0)],["จำนวนแผล C/S",fmt(sum("cs_deliveries"),0)],
       ["อุบัติเหตุบุคลากร",fmt(sum("injury"),0)+" ครั้ง · "+fmt(rate(sum("injury"),sum("staff_total"),100))+"%"],
       ["การเจ็บป่วยบุคลากร",fmt(sum("illness"),0)+" ครั้ง · "+fmt(rate(sum("illness"),sum("staff_total"),100))+"%"]
     ]:[
@@ -129,7 +129,7 @@ async function loadUnitReport(){
     ];
     metricCards("unitReportCards",cards);
     const tables=labour?[
-      ["การเฝ้าระวังในผู้คลอด",[["month","เดือน"],["deliveries","คลอดทางช่องคลอด"],["episiotomy","Episiotomy"],["no_tear","No tear / Slight tear"],["cs_deliveries","ผ่าตัดคลอด C/S"],["live_births","ทารกเกิดมีชีพ"]]]
+      ["การเฝ้าระวังในผู้คลอด",[["month","เดือน"],["total_deliveries","จำนวนผู้คลอดทั้งหมด"],["deliveries","คลอดทางช่องคลอด"],["episiotomy","Episiotomy"],["no_tear","No tear"],["slight_tear","Slight tear"],["cs_deliveries","ผ่าตัดคลอด C/S"],["live_births","ทารกเกิดมีชีพ"]]]
     ]:[
       ["ตารางที่ 1 การติดเชื้อที่สัมพันธ์กับการใช้อุปกรณ์การแพทย์",[["month","เดือน"],["ventilator_days","วัน On Ventilator"],["vap_cases","VAP (ครั้ง)"],["vap_rate","อัตรา VAP"],["foley_days","วัน On Foley's cath"],["cauti_cases","CAUTI (ครั้ง)"],["cauti_rate","อัตรา CAUTI"],["iv_days","วัน On IV"],["heparin_days","วัน On Heparin lock"],["iv_lock_days","รวมวัน On IV & Lock"],["phlebitis_cases","Phlebitis ≥3"],["phlebitis_rate","อัตรา Phlebitis"],["cline_days","วัน On C-Line / Cut down"],["umbilical_days","วัน On Umbilical cath"],["clabsi_days","รวมวัน On Device"],["clabsi_cases","CLABSI"],["clabsi_rate","อัตรา CLABSI"]]],
       ["ตารางที่ 2 การเฝ้าระวัง SSI",[["month","เดือน"],["clean_wound","Clean wound"],["clean_cont_wound","Clean-contaminated"],["contaminated_wound","Contaminated"],["dirty_wound","Dirty wound"],["ssi_cases","SSI เฉพาะแผลประเภท 1"],["ssi_rate","ร้อยละ SSI"]]],
