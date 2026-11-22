@@ -216,7 +216,8 @@ function listRecords_(month,user){
 function saveRecord_(b,user,status){
   const unit=String(b.unit||''),month=String(b.month||''),payload=b.payload||{};
   if(!canEdit_(unit,user))throw new Error('ไม่มีสิทธิ์บันทึกหน่วยงานนี้');
-  if(!/^\d{4}-\d{2}$/.test(month))throw new Error('รูปแบบเดือนต้องเป็น YYYY-MM');
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new Error('รูปแบบเดือนต้องเป็น YYYY-MM');
+  if(month>Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'yyyy-MM'))throw new Error('ไม่อนุญาตให้บันทึกเดือนถัดไป');
   Object.keys(payload).forEach(k=>{if(typeof payload[k]==='number'&&payload[k]<0)throw new Error('จำนวนต้องไม่ติดลบ: '+k);if(payload[k]!==''&&payload[k]!==null&&payload[k]!==undefined&&/^\d+(\.\d+)?$/.test(String(payload[k]))&&Number(payload[k])<0)throw new Error('จำนวนต้องไม่ติดลบ: '+k);});
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
