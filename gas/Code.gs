@@ -291,7 +291,7 @@ function aggregateMonth_(month,records){
   return {month,patient_total:sum('patient_total'),patient_days:sum('patient_days'),discharged:sum('discharged'),
     vap_days:ventDays,vap_cases:sum('vap_cases'),vap_rate:ventDays?sum('vap_cases')*1000/ventDays:null,
     foley_days:deviceDays,cauti_cases:sum('cauti_cases'),cauti_rate:deviceDays?sum('cauti_cases')*1000/deviceDays:null,
-    iv_lock_days:ivDays,phlebitis_cases:sum('phlebitis_cases'),phlebitis_rate:ivDays?sum('phlebitis_cases')*1000/ivDays:null,
+    iv_days:sum('iv_days'),heparin_days:sum('heparin_days'),iv_lock_days:ivDays,phlebitis_cases:sum('phlebitis_cases'),phlebitis_rate:ivDays?sum('phlebitis_cases')*1000/ivDays:null,
     cutdown_days:sum('cutdown_days'),cline_days:sum('cline_days'),umbilical_days:sum('umbilical_days'),clabsi_days:allDevice,clabsi_cases:sum('clabsi_cases'),clabsi_rate:allDevice?sum('clabsi_cases')*1000/allDevice:null,
     clean_wound:sum('clean_wound'),clean_cont_wound:sum('clean_cont_wound'),contaminated_wound:sum('contaminated_wound'),dirty_wound:sum('dirty_wound'),ssi_cases:sum('ssi_cases'),ssi_rate:sum('clean_wound')?sum('ssi_cases')*100/sum('clean_wound'):null,
     live_births:sum('live_births'),eye_infection:sum('eye_infection'),eye_rate:sum('live_births')?sum('eye_infection')*100/sum('live_births'):null,navel_infection:sum('navel_infection'),navel_rate:sum('live_births')?sum('navel_infection')*100/sum('live_births'):null,
