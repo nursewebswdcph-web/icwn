@@ -162,8 +162,9 @@ function initAdminView(){
   const now=new Date(),fy=now.getMonth()>=9?now.getFullYear()+544:now.getFullYear()+543;
   $("adminFiscalYear").innerHTML=Array.from({length:6},(_,i)=>fy-i).map(y=>`<option value="${y}">${y}</option>`).join("");
   $("adminFiscalYear").value=String(fy);$("adminMonth").max=localMonth();
-  $("adminFiscalYear").onchange=()=>loadAdminReports();
-  $("adminMonth").onchange=()=>loadAdminReports();
+  $("adminFiscalYear").onchange=()=>{loadAdminReports();loadAdminThip();};
+  $("adminMonth").onchange=()=>{loadAdminReports();loadAdminThip();};
+  $("sterilizationMonth").value=localMonth();$("sterilizationMonth").max=localMonth();$("sterilizationMonth").onchange=loadSterilizationInputs;
   document.querySelectorAll("[data-admin-page]").forEach(b=>b.onclick=()=>{
     document.querySelectorAll("[data-admin-page]").forEach(x=>x.classList.toggle("active",x===b));
     ["adminHospitalPage","adminThipPage","adminUnitsPage"].forEach((id,i)=>$(id).classList.toggle("hidden",id!==["adminHospitalPage","adminThipPage","adminUnitsPage"][["hospital","thip","units"].indexOf(b.dataset.adminPage)]));
@@ -217,13 +218,14 @@ async function loadAdminThip(){
       ["บุคลากรบาดเจ็บ (%)",fmt(total.staff_months?(total.injury*100/(total.staff_sum/total.staff_months)):null)],["ตรวจปราศจากเชื้อผ่าน (%)",fmt(total.sterilization_total?total.sterilization_passed*100/total.sterilization_total:null)]
     ]);
     renderReportTable("adminThipTable",rows,[["month","เดือน"],["vap_cases","VAP รวม (ครั้ง)"],["vap_days","วันใช้เครื่องช่วยหายใจ"],["vap_rate","VAP รวม"],["vap_icu_cases","VAP ICU/NICU (ครั้ง)"],["vap_icu_days","วันใช้เครื่องช่วยหายใจ ICU"],["vap_icu_rate","VAP ICU/NICU"],["vap_non_icu_rate","VAP นอก ICU"],["cauti_cases","CAUTI รวม (ครั้ง)"],["foley_days","วันคาสายสวน"],["cauti_rate","CAUTI รวม"],["cauti_icu_cases","CAUTI ICU (ครั้ง)"],["cauti_icu_days","วันคาสายสวน ICU"],["cauti_icu_rate","CAUTI ICU"],["cauti_non_icu_rate","CAUTI นอก ICU"],["injury","บาดเจ็บจากงาน (ครั้ง)"],["staff_average","บุคลากรเฉลี่ย"],["injury_rate","บาดเจ็บ (%)"],["sterilization_passed","ตรวจผ่าน"],["sterilization_total","ตรวจทั้งหมด"],["sterilization_rate","ตรวจผ่าน (%)"]]);
-    const month=$("adminMonth").value||localMonth();
-    const h=await api("getHospitalInputs",{month});
-    $("sterilizationPassed").value=h.sterilization_passed??"";$("sterilizationTotal").value=h.sterilization_total??"";
+    await loadSterilizationInputs();
   }catch(e){$("adminThipTable").textContent=e.message;}
 }
+async function loadSterilizationInputs(){
+  try{const month=$("sterilizationMonth").value||localMonth(),h=await api("getHospitalInputs",{month});$("sterilizationPassed").value=h.sterilization_passed??"";$("sterilizationTotal").value=h.sterilization_total??"";$("sterilizationMessage").textContent="";}catch(e){$("sterilizationMessage").textContent=e.message;}
+}
 async function saveSterilization(){
-  const month=$("adminMonth").value||localMonth(),passed=$("sterilizationPassed").value,total=$("sterilizationTotal").value;
+  const month=$("sterilizationMonth").value||localMonth(),passed=$("sterilizationPassed").value,total=$("sterilizationTotal").value;
   try{
     if(passed===""||total==="")throw new Error("กรุณากรอกข้อมูลทั้ง 2 ค่า");
     if(Number(passed)>Number(total))throw new Error("จำนวนครั้งที่ผ่านเกณฑ์ต้องไม่มากกว่าจำนวนครั้งที่ตรวจทั้งหมด");
