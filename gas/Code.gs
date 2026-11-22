@@ -257,10 +257,11 @@ function saveHospitalInput_(b,user){
   try{
     keys.forEach(k=>{
       const rows=sh.getDataRange().getValues();let row=0;
-      for(let i=1;i<rows.length;i++)if(String(rows[i][0])===month&&String(rows[i][1])===k){row=i+1;break;}
+      for(let i=1;i<rows.length;i++)if(String(rows[i][0])===month&&String(rows[i][1])===k)row=i+1;
       const record=[month,k,values[k]??'',b.note||'',new Date(),user.email];
       if(row)sh.getRange(row,1,1,6).setValues([record]);else sh.appendRow(record);
     });
+    ss_().getSheetByName('AuditLog').appendRow([new Date(),user.email,'SAVE_HOSPITAL_INPUT','โรงพยาบาล',month,'',JSON.stringify(values),'อัปเดตข้อมูล THIP II']);
     return {saved:true,month:month,values:values};
   }finally{lock.releaseLock();}
 }
