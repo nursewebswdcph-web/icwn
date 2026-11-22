@@ -9,7 +9,7 @@ const CONFIG = {
   GOOGLE_CLIENT_ID: '647367010976-opfd53df2f4ckhu58tbpjef5ve51h7li.apps.googleusercontent.com',
   TIMEZONE: 'Asia/Bangkok'
 };
-const UNIT_NAMES = ['พวงชมพู','สูติ','รักษ์ใจ','Stroke','เคมีบำบัด','สงฆ์','NICU','Sx','Ortho','ICU','อญ','อช','พิเศษปาริฉัตร','กุมาร','ห้องคลอด'];
+const UNIT_NAMES = ['พวงชมพู','สูติ-นรีเวช','รักษ์ใจปันสุข','Stroke','เคมีบำบัด','สงฆ์อาพาธ','NICU-SNB','ศัลยกรรมทั่วไป','ออร์โธปิดิกส์','ICU','อายุรกรรมหญิง','อายุรกรรมชาย','ปาริฉัตร','กุมารเวชกรรม','ห้องคลอด'].sort((a,b)=>a.localeCompare(b,'th',{sensitivity:'base'}));
 const SHEETS = {
   Users:['email','role','units','active'],
   Units:['unit_id','unit_name','unit_type','active'],
@@ -55,6 +55,7 @@ function ensureSheets_(){
     const rows=UNIT_NAMES.map((n,i)=>['U'+String(i+1).padStart(2,'0'),n,n==='ห้องคลอด'?'labour':'standard',true]);
     units.getRange(2,1,rows.length,4).setValues(rows);
   }
+  syncUnitNames_();
   const fields=ss.getSheetByName('Fields');
   if(fields.getLastRow()===1 && FIELD_DEFS.length) fields.getRange(2,1,FIELD_DEFS.length,6).setValues(FIELD_DEFS);
   seedUsers_();
@@ -70,6 +71,31 @@ function ensureSheets_(){
  * Seed authorized users. All listed users can access every active unit.
  * Existing unrelated user rows are preserved; listed accounts are upserted.
  */
+
+/**
+ * Migrate legacy unit labels in-place, retaining unit IDs and monthly data.
+ * Safe to run repeatedly; existing records and audit history are preserved.
+ */
+function syncUnitNames_(){
+  const rename={'สูติ':'สูติ-นรีเวช','รักษ์ใจ':'รักษ์ใจปันสุข','สงฆ์':'สงฆ์อาพาธ','NICU':'NICU-SNB','Sx':'ศัลยกรรมทั่วไป','Ortho':'ออร์โธปิดิกส์','อญ':'อายุรกรรมหญิง','อช':'อายุรกรรมชาย','พิเศษปาริฉัตร':'ปาริฉัตร','กุมาร':'กุมารเวชกรรม'};
+  const ss=ss_(), units=ss.getSheetByName('Units');
+  if(units.getLastRow()>1){
+    const rows=units.getRange(2,1,units.getLastRow()-1,4).getValues();
+    rows.forEach(r=>{const old=String(r[1]||'');if(rename[old])r[1]=rename[old];if(r[1]==='ห้องคลอด')r[2]='labour';});
+    rows.sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'th',{sensitivity:'base'}));
+    units.getRange(2,1,rows.length,4).setValues(rows);
+  }
+  ['Records','AuditLog'].forEach(name=>{
+    const sh=ss.getSheetByName(name);
+    if(!sh||sh.getLastRow()<2)return;
+    const lastCol=sh.getLastColumn(), values=sh.getRange(2,1,sh.getLastRow()-1,lastCol).getValues();
+    const unitCol=name==='Records'?1:3;
+    let changed=false;
+    values.forEach(r=>{const old=String(r[unitCol]||'');if(rename[old]){r[unitCol]=rename[old];changed=true;}});
+    if(changed)sh.getRange(2,1,values.length,lastCol).setValues(values);
+  });
+}
+
 function seedUsers_(){
   const admins = [
     'pinyadakongkaew@gmail.com',
