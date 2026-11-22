@@ -53,6 +53,8 @@ async function loginCredential(resp){
     $("userEmail").textContent=user.email;
     $("saveBtn").disabled=user.role==="Viewer";
     $("submitBtn").disabled=user.role==="Viewer";
+    $("addMonthlyRecord").classList.toggle("hidden",user.role==="Viewer");
+    $("changeUnit").classList.toggle("hidden",user.role==="Admin");
     renderUnits();
     $("loginView").classList.add("hidden");
     if(user.role==="Admin"){
@@ -148,6 +150,7 @@ function hidePages(){$("unitsPage").classList.add("hidden");$("unitHomePage").cl
 async function showHistory(){hidePages();$("historyPage").classList.remove("hidden");$("pageTitle").textContent="ประวัติ";try{const list=await api("listRecords",{month:$("month").value});$("historyContent").innerHTML=`<table><thead><tr><th>หน่วยงาน</th><th>เดือน</th><th>สถานะ</th></tr></thead><tbody>${(list||[]).map(r=>`<tr><td>${r.unit}</td><td>${r.month}</td><td>${r.status}</td></tr>`).join("")}</tbody></table>`;}catch(e){$("historyContent").textContent=e.message;}}
 $("saveBtn").onclick=()=>save(false);$("submitBtn").onclick=()=>save(true);$("backUnits").onclick=()=>{hidePages();$("unitHomePage").classList.remove("hidden");$("pageTitle").textContent=currentUnit;loadUnitHistory();};
 $("addMonthlyRecord").onclick=()=>{$("month").value=localMonth();openUnit(currentUnit);};
+$("changeUnit").onclick=()=>{hidePages();$("unitsPage").classList.remove("hidden");$("pageTitle").textContent="เลือกหน่วยงาน";};
 $("backAdminDashboard").onclick=()=>{$("appView").classList.add("hidden");$("adminView").classList.remove("hidden");$("backAdminDashboard").classList.add("hidden");$("adminHospitalPage").classList.remove("hidden");$("adminThipPage").classList.add("hidden");$("adminUnitsPage").classList.add("hidden");document.querySelectorAll("[data-admin-page]").forEach(b=>b.classList.toggle("active",b.dataset.adminPage==="hospital"));loadAdminReports();};
 $("month").max=localMonth();$("month").value=localMonth();$("month").onchange=()=>{if(currentUnit){if($("month").value>localMonth()){$("month").value=localMonth();return;}openUnit(currentUnit);}};document.querySelectorAll('[aria-label="เมนูหน่วยงาน"] .tab').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('[aria-label="เมนูหน่วยงาน"] .tab').forEach(x=>x.classList.toggle("active",x===b));
@@ -176,7 +179,7 @@ function initAdminView(){
 }
 function renderAdminUnits(){
   $("adminUnitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-admin-unit="${u}"><strong><i class="unit-dot"></i>${u}</strong><small>เข้าบันทึกข้อมูล →</small></button>`).join("");
-  document.querySelectorAll("[data-admin-unit]").forEach(b=>b.onclick=()=>{currentUnit=b.dataset.adminUnit;$("adminView").classList.add("hidden");$("appView").classList.remove("hidden");$("backAdminDashboard").classList.remove("hidden");hidePages();$("unitHomePage").classList.remove("hidden");$("unitHomeTitle").textContent=currentUnit;$("pageTitle").textContent=currentUnit;loadUnitHistory();});
+  document.querySelectorAll("[data-admin-unit]").forEach(b=>b.onclick=()=>{currentUnit=b.dataset.adminUnit;$("adminView").classList.add("hidden");$("appView").classList.remove("hidden");$("backAdminDashboard").classList.remove("hidden");$("changeUnit").classList.add("hidden");$("addMonthlyRecord").classList.remove("hidden");hidePages();$("unitHomePage").classList.remove("hidden");$("unitHomeTitle").textContent=currentUnit;$("pageTitle").textContent=currentUnit;loadUnitHistory();});
 }
 function metricCards(container,items){
   $(container).innerHTML=items.map(x=>`<div class="metric-card"><small>${x[0]}</small><strong>${x[1]}</strong></div>`).join("");
