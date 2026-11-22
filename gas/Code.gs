@@ -118,9 +118,14 @@ function seedUsers_(){
 }
 function upsertUser_(sh,index,email,role,units){
   const normalized=String(email).trim().toLowerCase();
-  const row=[normalized,role,units,true];
-  if(index[normalized]) sh.getRange(index[normalized],1,1,4).setValues([row]);
-  else {sh.appendRow(row);index[normalized]=sh.getLastRow();}
+  if(index[normalized]){
+    const rowNum=index[normalized];
+    const active=sh.getRange(rowNum,4).getValue();
+    sh.getRange(rowNum,1,1,4).setValues([[normalized,role,units,active===''||active===null?true:active]]);
+  }else{
+    sh.appendRow([normalized,role,units,true]);
+    index[normalized]=sh.getLastRow();
+  }
 }
 
 function verifyUser_(token){
