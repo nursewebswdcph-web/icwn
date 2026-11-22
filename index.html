@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123b56"><title>IC Indicator | รพร.สว่างแดนดิน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<header class="topbar"><div class="brandmark">IC</div><div><strong>IC Indicator</strong><small>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</small></div><div class="top-actions"><span id="userEmail"></span><button id="signOutBtn" class="ghost hidden">ออกจากระบบ</button></div></header>
+<main>
+<section id="loginView" class="login-wrap">
+  <div class="login-card"><div class="hero-icon">✚</div><p class="eyebrow">INFECTION CONTROL</p><h1>ระบบบันทึกตัวชี้วัด IC</h1><p class="muted">บันทึกข้อมูลสรุปรายเดือนของหน่วยงาน</p>
+  <div id="googleButton"></div><p id="loginMessage" class="hint">เข้าสู่ระบบด้วยบัญชี Google ที่ได้รับอนุญาต</p></div>
+</section>
+<section id="appView" class="hidden">
+  <div class="welcome"><div><p class="eyebrow">MONTHLY REPORTING</p><h1 id="pageTitle">เลือกหน่วยงาน</h1><p class="muted" id="welcomeText">เลือกหน่วยงานเพื่อบันทึกข้อมูลสรุปรายเดือน</p></div><div class="period"><label for="month">เดือนที่บันทึก</label><input type="month" id="month"></div></div>
+  <nav class="tabs" aria-label="เมนูหลัก"><button class="tab active" data-page="units">หน่วยงาน</button><button class="tab" data-page="summary">ภาพรวม</button><button class="tab" data-page="history">ประวัติ</button></nav>
+  <section id="unitsPage"><div id="unitGrid" class="unit-grid"></div></section>
+  <section id="formPage" class="hidden">
+    <div class="form-heading"><button id="backUnits" class="back">← หน่วยงาน</button><div><h2 id="unitTitle"></h2><p class="muted">กรอกยอดรวมของเดือนที่เลือก ไม่ต้องบันทึกรายบุคคล</p></div><span id="recordStatus" class="status draft">ฉบับร่าง</span></div>
+    <div id="formSections" class="form-sections"></div>
+    <div class="form-footer"><span id="saveMessage" class="muted">ข้อมูลจะบันทึกแยกตามหน่วยงานและเดือน</span><div><button id="saveBtn" class="primary">บันทึกฉบับร่าง</button><button id="submitBtn" class="secondary">ส่งรายงาน</button></div></div>
+  </section>
+  <section id="summaryPage" class="hidden"><div class="panel"><h2>ภาพรวมการบันทึก</h2><div id="summaryContent" class="summary-grid"></div></div></section>
+  <section id="historyPage" class="hidden"><div class="panel"><h2>ประวัติการบันทึก</h2><div id="historyContent"></div></div></section>
+</section>
+</main>
+<footer>IC Indicator · ข้อมูลสรุปรายเดือน · พ.ศ. 2570</footer>
+<script src="./app.js"></script>
+</body></html>
