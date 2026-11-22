@@ -66,7 +66,7 @@ async function loginCredential(resp){
       $("appView").classList.remove("hidden");
       $("adminView").classList.add("hidden");
     }
-    $("signOutBtn").classList.remove("hidden");document.body.classList.add("authed");document.querySelectorAll("[data-admin-only]").forEach(e=>e.classList.toggle("hidden",user.role!=="Admin"));setNav(user.role==="Admin"?"hospital":"units");
+    $("signOutBtn").classList.remove("hidden");document.body.classList.add("authed");document.querySelectorAll("[data-admin-only]").forEach(e=>e.classList.toggle("hidden",user.role!=="Admin"));setNav(user.role==="Admin"?"units":"units");
     hideLoginLoading();
   }catch(e){
     idToken="";
@@ -193,7 +193,12 @@ function initAdminView(){
     if(b.dataset.adminPage==="thip")loadAdminThip();
   });
   $("saveSterilization").onclick=saveSterilization;
-  loadAdminReports();loadAdminThip();
+  // Admin landing page: show the unit selection grid first after login.
+  document.querySelectorAll("[data-admin-page]").forEach(b=>b.classList.toggle("active",b.dataset.adminPage==="units"));
+  $("adminHospitalPage").classList.add("hidden");
+  $("adminThipPage").classList.add("hidden");
+  $("adminUnitsPage").classList.remove("hidden");
+  renderAdminUnits();
 }
 function renderAdminUnits(){setTimeout(paintStrips,0);
   $("adminUnitGrid").innerHTML=units.map(u=>`<button class="unit-card" data-admin-unit="${u}"><strong>${u}</strong><span class="strip">${"<i></i>".repeat(12)}</span><span class="cap">กำลังโหลดสถานะ…</span></button>`).join("");
