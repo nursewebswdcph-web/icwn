@@ -50,7 +50,7 @@ async function loginCredential(resp){
     $("loginLoadingDetail").textContent="ตรวจสอบสิทธิ์เรียบร้อยแล้ว กำลังเตรียมข้อมูลสำหรับใช้งาน";
     const allowed=await api("getUnits");
     units=allowed.map(x=>x.name).sort((a,b)=>a.localeCompare(b,"th",{sensitivity:"base"}));
-    localStorage.setItem("icwn_google_id_token",idToken);
+    try{localStorage.setItem("icwn_google_id_token",idToken);}catch(storageError){console.warn("ไม่สามารถบันทึกเซสชันในเบราว์เซอร์ได้",storageError);}
     $("userEmail").textContent=user.email;
     $("saveBtn").disabled=user.role==="Viewer";
     $("submitBtn").disabled=user.role==="Viewer";
@@ -70,7 +70,7 @@ async function loginCredential(resp){
     hideLoginLoading();
   }catch(e){
     idToken="";
-    localStorage.removeItem("icwn_google_id_token");
+    try{localStorage.removeItem("icwn_google_id_token");}catch(storageError){}
     $("loginMessage").textContent="เข้าสู่ระบบไม่สำเร็จ: "+(e?.message||"เกิดข้อผิดพลาด กรุณาลองใหม่");
     hideLoginLoading();
   }finally{
@@ -85,7 +85,7 @@ function initGoogle(){
   restoreLoginSession();
 }
 async function restoreLoginSession(){
-  const savedToken=localStorage.getItem("icwn_google_id_token");
+  let savedToken="";try{savedToken=localStorage.getItem("icwn_google_id_token")||"";}catch(storageError){}
   if(savedToken){
     showLoginLoading("กำลังกู้คืนการเข้าสู่ระบบ","กำลังตรวจสอบเซสชันเดิมกับระบบ");
     await loginCredential({credential:savedToken});
@@ -174,7 +174,7 @@ $("month").max=localMonth();$("month").value=localMonth();$("month").onchange=()
   document.querySelectorAll('[aria-label="เมนูหน่วยงาน"] .tab').forEach(x=>x.classList.toggle("active",x===b));
   if(b.dataset.page==="home"){hidePages();$("unitHomePage").classList.remove("hidden");$("pageTitle").textContent=currentUnit;loadUnitHistory();}
   if(b.dataset.page==="summary")showSummary();
-});$("signOutBtn").onclick=()=>{idToken="";user=null;localStorage.removeItem("icwn_google_id_token");google?.accounts?.id?.disableAutoSelect?.();location.reload();};
+});$("signOutBtn").onclick=()=>{idToken="";user=null;try{localStorage.removeItem("icwn_google_id_token");}catch(storageError){}google?.accounts?.id?.disableAutoSelect?.();location.reload();};
 function adminPeriod(){
   const fy=Number($("adminFiscalYear").value),m=$("adminMonth").value;
   return m?{month:m}:{fiscal_year:fy};
