@@ -326,7 +326,7 @@ function getUnitReport_(b,user){
     const p=JSON.parse(found[5]||'{}');
     const injury=['inj_needle','inj_blade','inj_tube_glass','inj_other_sharp','inj_eye','inj_mouth'].reduce((s,k)=>s+(Number(p[k])||0),0);
     const illness=['ill_respiratory','ill_gastro','ill_conjunctivitis','ill_chickenpox','ill_mumps','ill_herpes','ill_tb','ill_other'].reduce((s,k)=>s+(Number(p[k])||0),0);
-    const vent=Number(p.ventilator_days)||0,foley=Number(p.foley_days)||0,iv=(Number(p.iv_days)||0)+(Number(p.heparin_days)||0),device=(Number(p.cline_days)||0)+(Number(p.umbilical_days)||0);
+    const vent=Number(p.ventilator_days)||0,foley=Number(p.foley_days)||0,iv=(Number(p.iv_days)||0)+(Number(p.heparin_days)||0),device=(Number(p.cutdown_days)||0)+(Number(p.cline_days)||0)+(Number(p.umbilical_days)||0);
     const clean=Number(p.clean_wound)||0,staff=Number(p.staff_total)||0,live=Number(p.live_births)||0,deliveries=Number(p.deliveries)||0,epi=Number(p.episiotomy)||0,cs=Number(p.cs_deliveries)||0;
     return {month,missing:false,status:found[4],patient_total:Number(p.patient_total)||0,patient_days:Number(p.patient_days)||0,discharged:Number(p.discharged)||0,
       ventilator_days:vent,vap_cases:Number(p.vap_cases)||0,vap_rate:vent?(Number(p.vap_cases)||0)*1000/vent:null,
