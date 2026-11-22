@@ -6,7 +6,7 @@
  */
 const CONFIG = {
   SPREADSHEET_ID: '1u_96VmaDeQMXfxNBgiLaiwZqwK95f5mcC_QjGc9GcLI',
-  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: '647367010976-opfd53df2f4ckhu58tbpjef5ve51h7li.apps.googleusercontent.com',
   TIMEZONE: 'Asia/Bangkok'
 };
 const UNIT_NAMES = ['พวงชมพู','สูติ','รักษ์ใจ','Stroke','เคมีบำบัด','สงฆ์','NICU','Sx','Ortho','ICU','อญ','อช','พิเศษปาริฉัตร','กุมาร','ห้องคลอด'];
